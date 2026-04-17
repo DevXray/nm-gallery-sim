@@ -1,9 +1,107 @@
-﻿/vendor
+﻿# Laravel specific
+/vendor
 /node_modules
 .env
 .env.*
 !.env.example
-/storage
-Homestead.json
-Homestead.yaml
+!.env.testing
+/storage/*.key
+/public/storage
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/bootstrap/cache/*.php
+/config/*.php
+/config/*.json
+/.phpunit.cache
+/.phpunit.result.cache
+
+# IDE dan OS
+/.idea
+/.vscode
+/.vs
 .DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# Composer
+composer.phar
+composer.lock  # (boleh di-commit atau tidak, terserah tim)
+
+# NPM
+npm-debug.log
+yarn-error.log
+package-lock.json  # (boleh di-commit atau tidak)
+yarn.lock
+
+# PHPUnit
+.phpunit.result.cache
+.coverage
+.coverage.*
+.coverage_cache
+.clover
+.logs
+
+# Laravel Sail
+/sail
+
+# Laravel Spark
+/storage/app/public/*
+!storage/app/public/.gitkeep
+
+# Laravel Horizon
+/storage/horizon
+
+# Laravel Telescope
+/telescope
+
+# PHP CS Fixer
+.php-cs-fixer.cache
+
+# PHPStan
+.phpstan.cache
+
+# Debug Bar
+/debugbar
+
+# Log files
+*.log
+storage/logs/*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment backup
+.env.backup
+.env.*.backup
+
+# Laravel IDE Helper
+_ide_helper.php
+.phpstorm.meta.php
+
+# SQLite database
+*.sqlite
+*.sqlite-journal
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+ehthumbs.db
+ehthumbs_vista.db
+*.dll
+
+# Linux
+.directory
+*.pid
+*.seed
+*.pid.lock
