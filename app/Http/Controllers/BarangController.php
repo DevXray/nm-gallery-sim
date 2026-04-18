@@ -2,63 +2,58 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Barang;
 use Illuminate\Http\Request;
 
 class BarangController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $barang = Barang::all();
+        $totalBarang = Barang::count();
+        return view('barang.index', compact('barang', 'totalBarang'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return view('barang.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nama_barang' => 'required',
+            'harga_sewa' => 'required|numeric',
+            'status_barang' => 'required'
+        ]);
+
+        Barang::create($request->all());
+        return redirect()->route('barang.index')->with('success', 'Barang berhasil ditambahkan');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function edit($id)
     {
-        //
+        $barang = Barang::findOrFail($id);
+        return view('barang.edit', compact('barang'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $request->validate([
+            'nama_barang' => 'required',
+            'harga_sewa' => 'required|numeric',
+            'status_barang' => 'required'
+        ]);
+
+        $barang = Barang::findOrFail($id);
+        $barang->update($request->all());
+        return redirect()->route('barang.index')->with('success', 'Barang berhasil diupdate');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy($id)
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $barang = Barang::findOrFail($id);
+        $barang->delete();
+        return redirect()->route('barang.index')->with('success', 'Barang berhasil dihapus');
     }
 }

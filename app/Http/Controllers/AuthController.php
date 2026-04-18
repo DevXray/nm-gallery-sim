@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Pengguna;
 
@@ -24,28 +23,16 @@ class AuthController extends Controller
         $user = Pengguna::where('username', $request->username)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
-            session(['user' => $user]);
+            session(['user' => [
+                'id_user' => $user->id_user,
+                'nama_lengkap' => $user->nama_lengkap,
+                'username' => $user->username,
+                'role' => $user->role,
+            ]]);
             return redirect()->route('dashboard');
         }
 
         return back()->withErrors(['message' => 'Username atau password salah!']);
-    }
-
-    public function dashboard()
-    {
-        $user = session('user');
-        
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        // Data untuk dashboard
-        $totalBarang = \App\Models\Barang::count();
-        $totalPelanggan = \App\Models\Pelanggan::count();
-        $totalTransaksi = \App\Models\Transaksi::count();
-        $barangTersedia = \App\Models\Barang::where('status_barang', 'Tersedia')->count();
-
-        return view('dashboard', compact('user', 'totalBarang', 'totalPelanggan', 'totalTransaksi', 'barangTersedia'));
     }
 
     public function logout()

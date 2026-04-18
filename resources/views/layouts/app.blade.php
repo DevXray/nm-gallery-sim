@@ -79,6 +79,7 @@ body {
     font-weight: 500;
     text-decoration: none;
     transition: all 0.15s;
+    cursor: pointer;
 }
 .nav-item:hover {
     background: rgba(255,255,255,0.06);
@@ -401,9 +402,137 @@ body {
     color: #a07830;
     border: 1px solid rgba(201,168,76,0.25);
 }
+/* Form Styles */
+.form-card {
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.form-sect {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f4f4f5;
+}
+.fgrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.f-full {
+    grid-column: 1 / -1;
+}
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.flbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: #52525b;
+}
+.finput, .fselect {
+    padding: 10px 14px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.finput:focus, .fselect:focus {
+    outline: none;
+    border-color: #C9A84C;
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+}
+.btn-white {
+    padding: 8px 20px;
+    background: #ffffff;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    color: #52525b;
+}
+.btn-white:hover {
+    background: #f4f4f5;
+}
+/* Modal Popup */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-popup {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    padding: 28px 24px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    border-top: 4px solid #C9A84C;
+}
+.modal-overlay.show .modal-popup {
+    transform: scale(1);
+}
+.modal-icon {
+    width: 64px;
+    height: 64px;
+    background: #fee2e2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 32px;
+}
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #dc2626;
+    margin-bottom: 8px;
+}
+.modal-message {
+    font-size: 13px;
+    color: #52525b;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+.modal-close {
+    background: #0a0a0a;
+    color: #e0c06e;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
 </style>
 </head>
 <body>
+
+@php
+    $userRole = session('user')['role'] ?? null;
+    $userName = session('user')['nama_lengkap'] ?? 'Loading...';
+    $userInitial = substr($userName, 0, 1);
+@endphp
 
 <aside class="sidebar">
     <div class="s-logo">
@@ -414,39 +543,83 @@ body {
         </div>
     </div>
     <div class="s-label">Menu</div>
+    
+    <!-- Dashboard (SEMUA ROLE) -->
     <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h5a1 1 0 011 1v5a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm7 0a1 1 0 011-1h5a1 1 0 011 1v5a1 1 0 01-1 1h-5a1 1 0 01-1-1V4zM3 13a1 1 0 011-1h5a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm7 0a1 1 0 011-1h5a1 1 0 011 1v3a1 1 0 01-1 1h-5a1 1 0 01-1-1v-3z"/></svg>
         Dashboard
     </a>
-    <a href="#" class="nav-item">
+
+    <!-- Inventaris (ONLY OWNER) -->
+    @if($userRole == 'Owner')
+    <a href="{{ route('barang.index') }}" class="nav-item {{ request()->routeIs('barang.*') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
         Inventaris & Stok
         <span class="nav-pill info">{{ $totalBarang ?? 0 }}</span>
     </a>
-    <a href="#" class="nav-item">
+    @else
+    <div class="nav-item" onclick="showAccessDenied('Inventaris & Stok', 'Owner')">
+        <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
+        Inventaris & Stok
+        <span class="nav-pill info">{{ $totalBarang ?? 0 }}</span>
+    </div>
+    @endif
+
+    <!-- Transaksi (ONLY KARYAWAN) -->
+    @if($userRole == 'Karyawan')
+    <a href="{{ route('transaksi.index') }}" class="nav-item {{ request()->routeIs('transaksi.*') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
         Transaksi & E-Nota
     </a>
-    <a href="#" class="nav-item">
+    @else
+    <div class="nav-item" onclick="showAccessDenied('Transaksi & E-Nota', 'Karyawan')">
+        <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+        Transaksi & E-Nota
+    </div>
+    @endif
+
+    <!-- Laporan (ONLY OWNER) -->
+    @if($userRole == 'Owner')
+    <a href="{{ route('laporan') }}" class="nav-item {{ request()->routeIs('laporan') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
         Laporan Keuangan
     </a>
+    @else
+    <div class="nav-item" onclick="showAccessDenied('Laporan Keuangan', 'Owner')">
+        <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+        Laporan Keuangan
+    </div>
+    @endif
+
     <div class="s-label" style="margin-top:8px">Lainnya</div>
-    <a href="#" class="nav-item">
+
+    <!-- Pelanggan (SEMUA ROLE) -->
+    <a href="{{ route('pelanggan.index') }}" class="nav-item {{ request()->routeIs('pelanggan.*') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/></svg>
         Pelanggan
     </a>
-    <a href="#" class="nav-item">
+
+    <!-- Pengaturan (ONLY OWNER) -->
+    @if($userRole == 'Owner')
+    <a href="{{ route('pengaturan') }}" class="nav-item {{ request()->routeIs('pengaturan') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
         Pengaturan
     </a>
+    @else
+    <div class="nav-item" onclick="showAccessDenied('Pengaturan', 'Owner')">
+        <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+        Pengaturan
+    </div>
+    @endif
+
     <div class="s-footer">
-        <form action="#" method="POST">
-            <div class="s-user">
-                <div class="s-ava">N</div>
+        <form action="{{ route('logout') }}" method="POST" id="logoutForm">
+            @csrf
+            <div class="s-user" onclick="document.getElementById('logoutForm').submit();" style="cursor:pointer">
+                <div class="s-ava">{{ $userInitial }}</div>
                 <div>
-                    <div class="s-uname">Nurhayati</div>
-                    <div class="s-urole">Owner · Admin</div>
+                    <div class="s-uname">{{ $userName }}</div>
+                    <div class="s-urole">{{ $userRole ?? 'Please Login' }}</div>
                 </div>
             </div>
         </form>
@@ -465,13 +638,43 @@ body {
             <input placeholder="Cari baju, pelanggan, transaksi...">
         </div>
         <div class="tb-right">
-            <button class="btn-gold">+ Sewa Baru</button>
+            @if($userRole == 'Karyawan')
+            <a href="{{ route('transaksi.create') }}" class="btn-gold">+ Sewa Baru</a>
+            @endif
         </div>
     </header>
     <div class="content">
         @yield('content')
     </div>
 </div>
+
+<!-- Modal Popup Access Denied -->
+<div class="modal-overlay" id="accessModal">
+    <div class="modal-popup">
+        <div class="modal-icon">🔒</div>
+        <div class="modal-title">Akses Ditolak</div>
+        <div class="modal-message" id="modalMessage">Anda tidak memiliki akses ke halaman ini.</div>
+        <button class="modal-close" onclick="closeModal()">OK</button>
+    </div>
+</div>
+
+<script>
+    function showAccessDenied(pageName, requiredRole) {
+        document.getElementById('modalMessage').innerHTML = `Anda tidak dapat mengakses <strong>${pageName}</strong>.<br><br>Halaman ini hanya untuk <strong>${requiredRole}</strong>.`;
+        document.getElementById('accessModal').classList.add('show');
+    }
+    
+    function closeModal() {
+        document.getElementById('accessModal').classList.remove('show');
+    }
+    
+    // Tutup modal jika klik di luar
+    document.getElementById('accessModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+</script>
 
 </body>
 </html>
