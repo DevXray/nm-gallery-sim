@@ -20,58 +20,70 @@ class TransaksiController extends Controller
     }
 
     // Simpan transaksi
-    public function store(Request $request)
-    {
-        $request->validate([
-            'id_pelanggan' => 'required',
-            'id_barang' => 'required',
-            'tgl_sewa' => 'required|date',
-            'tgl_jatuh_tempo' => 'required|date',
+   public function store(Request $request)
+{
+    $request->validate([
+        'nama_pelanggan' => 'required',
+        'no_telp' => 'required',
+        'id_barang' => 'required',
+        'tgl_sewa' => 'required|date',
+        'tgl_jatuh_tempo' => 'required|date',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        // Cek apakah pelanggan sudah ada berdasarkan no_telp
+        $pelanggan = Pelanggan::where('no_telp', $request->no_telp)->first();
+        
+        if (!$pelanggan) {
+            // Buat pelanggan baru
+            $pelanggan = Pelanggan::create([
+                'nama_pelanggan' => $request->nama_pelanggan,
+                'no_telp' => $request->no_telp,
+                'alamat' => $request->alamat,
+            ]);
+        }
+        
+        $barang = Barang::findOrFail($request->id_barang);
+        
+        // Hitung durasi
+        $tglSewa = new \DateTime($request->tgl_sewa);
+        $tglKembali = new \DateTime($request->tgl_jatuh_tempo);
+        $durasi = $tglSewa->diff($tglKembali)->days;
+        if ($durasi == 0) $durasi = 1;
+        
+        $total_biaya = $barang->harga_sewa * $durasi;
+
+        // Buat transaksi
+        $transaksi = Transaksi::create([
+            'id_pelanggan' => $pelanggan->id_pelanggan,
+            'id_user' => session('user')['id_user'],
+            'tgl_sewa' => $request->tgl_sewa,
+            'tgl_jatuh_tempo' => $request->tgl_jatuh_tempo,
+            'total_biaya' => $total_biaya,
+            'total_denda' => 0,
+            'status_transaksi' => 'Diproses',
         ]);
 
-        DB::beginTransaction();
-        try {
-            $barang = Barang::findOrFail($request->id_barang);
-            
-            // Hitung durasi
-            $tglSewa = new \DateTime($request->tgl_sewa);
-            $tglKembali = new \DateTime($request->tgl_jatuh_tempo);
-            $durasi = $tglSewa->diff($tglKembali)->days;
-            if ($durasi == 0) $durasi = 1;
-            
-            $total_biaya = $barang->harga_sewa * $durasi;
+        // Buat detail transaksi
+        DetailTransaksi::create([
+            'id_transaksi' => $transaksi->id_transaksi,
+            'id_barang' => $request->id_barang,
+            'kuantitas' => 1,
+            'sub_total' => $total_biaya,
+        ]);
 
-            // Buat transaksi
-            $transaksi = Transaksi::create([
-                'id_pelanggan' => $request->id_pelanggan,
-                'id_user' => session('user')['id_user'],
-                'tgl_sewa' => $request->tgl_sewa,
-                'tgl_jatuh_tempo' => $request->tgl_jatuh_tempo,
-                'total_biaya' => $total_biaya,
-                'total_denda' => 0,
-                'status_transaksi' => 'Diproses',
-            ]);
+        // Update status barang
+        $barang->update(['status_barang' => 'Disewa']);
 
-            // Buat detail transaksi
-            DetailTransaksi::create([
-                'id_transaksi' => $transaksi->id_transaksi,
-                'id_barang' => $request->id_barang,
-                'kuantitas' => 1,
-                'sub_total' => $total_biaya,
-            ]);
+        DB::commit();
+        return redirect()->route('transaksi.show', $transaksi->id_transaksi)->with('success', 'Transaksi berhasil dibuat');
 
-            // Update status barang
-            $barang->update(['status_barang' => 'Disewa']);
-
-            DB::commit();
-            return redirect()->route('transaksi.show', $transaksi->id_transaksi)->with('success', 'Transaksi berhasil dibuat');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['message' => 'Gagal membuat transaksi: ' . $e->getMessage()]);
-        }
+    } catch (\Exception $e) {
+        DB::rollback();
+        return back()->withErrors(['message' => 'Gagal membuat transaksi: ' . $e->getMessage()]);
     }
-
+}
     // Halaman DETAIL transaksi (show)
     public function show($id)
     {

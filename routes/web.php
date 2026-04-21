@@ -27,7 +27,7 @@ Route::middleware('auth.session')->group(function () {
     Route::middleware(['role:Owner'])->group(function () {
         Route::resource('barang', BarangController::class);
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
-        Route::get('/laporan/export/excel', [LaporanController::class, 'exportExcel'])->name('laporan.export.excel');
+Route::get('/laporan/export/excel', [LaporanController::class, 'exportExcel'])->name('laporan.export.excel');
 Route::get('/laporan/export/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.export.pdf');
         Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan');
          

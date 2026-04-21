@@ -13,46 +13,52 @@
         }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            background: #0a0a0a;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .login-container {
+        .login-wrapper {
+            display: flex;
+            max-width: 1100px;
             width: 100%;
-            max-width: 400px;
-            padding: 20px;
-        }
-        .login-card {
             background: white;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            border-top: 3px solid #C9A84C;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            margin: 20px;
+        }
+        /* LEFT SIDE - Form */
+        .login-left {
+            flex: 1;
+            padding: 48px 40px;
+            background: white;
         }
         .logo {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 32px;
         }
         .logo-icon {
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             background: linear-gradient(135deg, #e0c06e, #C9A84C, #a07830);
-            border-radius: 12px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Instrument Serif', serif;
-            font-size: 26px;
+            font-size: 28px;
             font-style: italic;
             color: #0a0a0a;
             margin: 0 auto 12px;
+            box-shadow: 0 8px 20px rgba(201,168,76,0.3);
         }
         .logo-name {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
             color: #0a0a0a;
+            letter-spacing: -0.3px;
         }
         .logo-sub {
             font-size: 11px;
@@ -62,13 +68,14 @@
         .title {
             font-size: 18px;
             font-weight: 700;
-            color: #0a0a0a;
             margin-bottom: 8px;
+            text-align: center;
         }
         .subtitle {
             font-size: 12px;
-            color: #71717a;
-            margin-bottom: 24px;
+            color: #a1a1aa;
+            margin-bottom: 28px;
+            text-align: center;
         }
         .form-group {
             margin-bottom: 20px;
@@ -105,6 +112,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
+            margin-top: 8px;
         }
         .btn-login:hover {
             background: #1a1a1a;
@@ -118,17 +126,52 @@
             font-size: 12px;
             margin-bottom: 20px;
         }
-        .info {
+        /* RIGHT SIDE - Image */
+        .login-right {
+            flex: 1;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        .login-right img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+        .company-info {
+            position: absolute;
+            bottom: 30px;
             text-align: center;
-            margin-top: 20px;
-            font-size: 11px;
-            color: #a1a1aa;
+            color: white;
+        }
+        .company-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0c06e;
+        }
+        .company-tagline {
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+        }
+        @media (max-width: 768px) {
+            .login-wrapper {
+                flex-direction: column;
+            }
+            .login-right {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
+    <div class="login-wrapper">
+        <!-- LEFT SIDE - Form Login -->
+        <div class="login-left">
             <div class="logo">
                 <div class="logo-icon">N</div>
                 <div class="logo-name">NM Gallery</div>
@@ -147,7 +190,7 @@
                 @csrf
                 <div class="form-group">
                     <label>Username</label>
-                    <input type="text" name="username" placeholder="Masukkan username" required>
+                    <input type="text" name="username" placeholder="Masukkan username" required autofocus>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
@@ -155,9 +198,14 @@
                 </div>
                 <button type="submit" class="btn-login">Login</button>
             </form>
-            <div class="info">
-                Demo: username <strong>owner</strong> / <strong>karyawan1</strong><br>
-                password: <strong>owner123</strong> / <strong>karyawan123</strong>
+        </div>
+
+        <!-- RIGHT SIDE - Foto Perusahaan -->
+        <div class="login-right">
+            <img src="{{ asset('images/company-photo.png') }}" alt="NM Gallery" onerror="this.src='https://placehold.co/500x600/1a1a1a/e0c06e?text=NM+Gallery'">
+            <div class="company-info">
+                <div class="company-name">NM Gallery</div>
+                <div class="company-tagline">Baju Bodo Collection · Makassar</div>
             </div>
         </div>
     </div>

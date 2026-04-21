@@ -10,7 +10,8 @@ class PelangganController extends Controller
     public function index()
     {
         $pelanggan = Pelanggan::all();
-        return view('pelanggan.index', compact('pelanggan'));
+        $totalPelanggan = Pelanggan::count();  // <-- Tambahkan ini
+        return view('pelanggan.index', compact('pelanggan', 'totalPelanggan'));
     }
 
     public function create()
@@ -26,7 +27,7 @@ class PelangganController extends Controller
         ]);
 
         Pelanggan::create($request->all());
-        return redirect()->route('pelanggan.index');
+        return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil ditambahkan');
     }
 
     public function edit($id)
@@ -44,13 +45,13 @@ class PelangganController extends Controller
 
         $pelanggan = Pelanggan::findOrFail($id);
         $pelanggan->update($request->all());
-        return redirect()->route('pelanggan.index');
+        return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil diupdate');
     }
 
     public function destroy($id)
     {
         $pelanggan = Pelanggan::findOrFail($id);
         $pelanggan->delete();
-        return redirect()->route('pelanggan.index');
+        return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil dihapus');
     }
 }

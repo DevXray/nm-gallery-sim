@@ -17,9 +17,9 @@
     </div>
 </div>
 
-<div class="trx-layout" style="grid-template-columns: 1fr 1fr; gap: 24px;">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
 
-    <!-- LEFT: Informasi Transaksi -->
+    <!-- LEFT: Info Transaksi -->
     <div class="form-card">
         <div class="form-sect">
             <div class="form-sect-lbl">Informasi Transaksi</div>
@@ -30,7 +30,7 @@
                 </div>
                 <div class="field f-full">
                     <label class="flbl">Status</label>
-                    <div>
+                    <div style="margin-top:2px">
                         @if($transaksi->status_transaksi == 'Diproses')
                             <span class="badge badge-out">🟡 Sedang Disewa</span>
                         @else
@@ -62,7 +62,7 @@
         <div class="form-sect">
             <div class="form-sect-lbl">Detail Sewa</div>
             <div class="fgrid">
-                <div class="field">
+                <div class="field f-full">
                     <label class="flbl">Baju yang Disewa</label>
                     <input type="text" class="finput" readonly value="{{ $transaksi->detailTransaksis->first()->barang->nama_barang ?? '-' }}">
                 </div>
@@ -84,12 +84,12 @@
                 </div>
                 <div class="field">
                     <label class="flbl">Total Biaya</label>
-                    <input type="text" class="finput" readonly value="Rp {{ number_format($transaksi->total_biaya, 0, ',', '.') }}">
+                    <input type="text" class="finput" readonly value="Rp {{ number_format($transaksi->total_biaya, 0, ',', '.') }}" style="color:var(--gold-dk);font-weight:700;font-family:var(--ff-mono)">
                 </div>
                 @if($transaksi->total_denda > 0)
-                <div class="field">
+                <div class="field f-full">
                     <label class="flbl">Denda Keterlambatan</label>
-                    <input type="text" class="finput" readonly value="Rp {{ number_format($transaksi->total_denda, 0, ',', '.') }}" style="color:#dc2626;">
+                    <input type="text" class="finput" readonly value="Rp {{ number_format($transaksi->total_denda, 0, ',', '.') }}" style="color:#c0392b;font-weight:700;font-family:var(--ff-mono)">
                 </div>
                 @endif
             </div>
@@ -97,7 +97,7 @@
 
         @if($transaksi->status_transaksi == 'Diproses')
         <div class="form-sect" style="display:flex;gap:10px;justify-content:flex-end;background:var(--gray-50)">
-            <form action="{{ route('transaksi.update', $transaksi->id_transaksi) }}" method="POST" onsubmit="return confirm('Kembalikan barang?')">
+            <form action="{{ route('transaksi.update', $transaksi->id_transaksi) }}" method="POST" onsubmit="return confirm('Proses pengembalian baju ini?')">
                 @csrf
                 @method('PUT')
                 <button type="submit" class="btn-gold">↩️ Proses Pengembalian</button>
@@ -107,13 +107,12 @@
     </div>
 
     <!-- RIGHT: E-Nota -->
-    <div class="nota-panel">
+    <div class="nota-panel" id="notaPrint">
         <div class="nota-preview-hd">
             <div class="nota-preview-title">E-Nota Digital</div>
             <span style="font-size:10.5px;color:var(--gray-400)">Bukti Transaksi Resmi</span>
         </div>
-
-        <div class="nota-paper" id="notaPrint">
+        <div class="nota-paper">
             <div class="nota-top">
                 <div class="nota-brand">NM Gallery</div>
                 <div class="nota-tagline">Baju Bodo Collection</div>
@@ -121,82 +120,42 @@
                 <div class="nota-trx-num">#TRX-{{ str_pad($transaksi->id_transaksi, 4, '0', STR_PAD_LEFT) }}</div>
             </div>
             <div class="nota-body">
-                <div class="nota-row">
-                    <span class="nota-key">Tanggal Transaksi</span>
-                    <span class="nota-val">{{ \Carbon\Carbon::parse($transaksi->created_at)->format('d/m/Y H:i') }}</span>
-                </div>
-                <div class="nota-row">
-                    <span class="nota-key">Pelanggan</span>
-                    <span class="nota-val">{{ $transaksi->pelanggan->nama_pelanggan ?? '-' }}</span>
-                </div>
-                <div class="nota-row">
-                    <span class="nota-key">No. Telepon</span>
-                    <span class="nota-val">{{ $transaksi->pelanggan->no_telp ?? '-' }}</span>
-                </div>
-                <div class="nota-row">
-                    <span class="nota-key">Baju</span>
-                    <span class="nota-val">{{ $transaksi->detailTransaksis->first()->barang->nama_barang ?? '-' }}</span>
-                </div>
+                <div class="nota-row"><span class="nota-key">Tanggal Transaksi</span><span class="nota-val">{{ \Carbon\Carbon::parse($transaksi->created_at)->format('d/m/Y H:i') }}</span></div>
+                <div class="nota-row"><span class="nota-key">Pelanggan</span><span class="nota-val">{{ $transaksi->pelanggan->nama_pelanggan ?? '-' }}</span></div>
+                <div class="nota-row"><span class="nota-key">No. Telepon</span><span class="nota-val">{{ $transaksi->pelanggan->no_telp ?? '-' }}</span></div>
+                <div class="nota-row"><span class="nota-key">Baju</span><span class="nota-val">{{ $transaksi->detailTransaksis->first()->barang->nama_barang ?? '-' }}</span></div>
                 <div class="nota-row">
                     <span class="nota-key">Periode Sewa</span>
                     <span class="nota-val">{{ \Carbon\Carbon::parse($transaksi->tgl_sewa)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($transaksi->tgl_jatuh_tempo)->format('d/m/Y') }}</span>
                 </div>
-                <div class="nota-row">
-                    <span class="nota-key">Durasi</span>
-                    <span class="nota-val" style="color:var(--gold-dk);font-weight:700">{{ \Carbon\Carbon::parse($transaksi->tgl_sewa)->diffInDays($transaksi->tgl_jatuh_tempo) }} hari</span>
-                </div>
-                <div class="nota-row">
-                    <span class="nota-key">Harga/hari</span>
-                    <span class="nota-val">Rp {{ number_format($transaksi->detailTransaksis->first()->barang->harga_sewa ?? 0, 0, ',', '.') }}</span>
-                </div>
-
+                <div class="nota-row"><span class="nota-key">Durasi</span><span class="nota-val gold">{{ \Carbon\Carbon::parse($transaksi->tgl_sewa)->diffInDays($transaksi->tgl_jatuh_tempo) }} hari</span></div>
+                <div class="nota-row"><span class="nota-key">Harga/hari</span><span class="nota-val">Rp {{ number_format($transaksi->detailTransaksis->first()->barang->harga_sewa ?? 0, 0, ',', '.') }}</span></div>
                 @if($transaksi->tgl_kembali)
-                <div class="nota-row">
-                    <span class="nota-key">Tanggal Kembali</span>
-                    <span class="nota-val">{{ \Carbon\Carbon::parse($transaksi->tgl_kembali)->format('d/m/Y') }}</span>
-                </div>
+                <div class="nota-row"><span class="nota-key">Tgl Kembali</span><span class="nota-val">{{ \Carbon\Carbon::parse($transaksi->tgl_kembali)->format('d/m/Y') }}</span></div>
                 @endif
-
                 @if($transaksi->total_denda > 0)
-                <div class="nota-row">
-                    <span class="nota-key">Denda Keterlambatan</span>
-                    <span class="nota-val" style="color:#dc2626;">Rp {{ number_format($transaksi->total_denda, 0, ',', '.') }}</span>
-                </div>
+                <div class="nota-row"><span class="nota-key">Denda</span><span class="nota-val" style="color:#c0392b">Rp {{ number_format($transaksi->total_denda, 0, ',', '.') }}</span></div>
                 @endif
-
                 <div class="nota-total-box">
                     <span class="nota-total-lbl">TOTAL</span>
                     <span class="nota-total-val">Rp {{ number_format($transaksi->total_biaya + $transaksi->total_denda, 0, ',', '.') }}</span>
                 </div>
-
                 <div class="nota-footer">
                     Terima kasih telah mempercayakan momen<br>Anda kepada <b>NM Gallery</b> ✦ Makassar
                 </div>
             </div>
         </div>
-
         <button class="nota-gen-btn" onclick="window.print()">🖨 Cetak E-Nota</button>
     </div>
 </div>
 
 <style>
 @media print {
-    .sidebar, .topbar, .modal-acts, .nota-gen-btn, .btn-gold, .btn-white, .form-card, .pg-head {
-        display: none !important;
-    }
-    .trx-layout {
-        display: block !important;
-    }
-    .nota-panel {
-        box-shadow: none !important;
-        border: none !important;
-    }
-    .nota-paper {
-        margin: 0 !important;
-    }
-    body {
-        background: white !important;
-    }
+    .sidebar, .topbar, .pg-head, .form-card, .nota-gen-btn { display: none !important; }
+    body { background: white !important; overflow: visible !important; }
+    .main { overflow: visible !important; }
+    .content { overflow: visible !important; padding: 0 !important; }
+    .nota-panel { box-shadow: none !important; border: none !important; width: 100% !important; }
 }
 </style>
 @endsection

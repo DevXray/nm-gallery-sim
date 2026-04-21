@@ -11,7 +11,12 @@ class BarangController extends Controller
     {
         $barang = Barang::all();
         $totalBarang = Barang::count();
-        return view('barang.index', compact('barang', 'totalBarang'));
+        $barangTersedia = Barang::where('status_barang', 'Tersedia')->count();
+        $barangDisewa = Barang::where('status_barang', 'Disewa')->count();
+        $barangLaundry = Barang::where('status_barang', 'Laundry')->count();
+        $barangRusak = Barang::where('status_barang', 'Rusak')->count();
+        
+        return view('barang.index', compact('barang', 'totalBarang', 'barangTersedia', 'barangDisewa', 'barangLaundry', 'barangRusak'));
     }
 
     public function create()
