@@ -16,19 +16,19 @@
         <div class="stat-card">
             <div class="stat-ico gold-ico">👘</div>
             <div class="stat-label">Baju Siap Sewa</div>
-            <div class="stat-val">{{ $barangTersedia }}</div>
-            <span class="stat-tag neutral">dari {{ $totalBarang }} koleksi</span>
+            <div class="stat-val">{{ $barangTersedia ?? 0 }}</div>
+            <span class="stat-tag neutral">dari {{ $totalBarang ?? 0 }} koleksi</span>
         </div>
         <div class="stat-card">
             <div class="stat-ico green-ico">📤</div>
             <div class="stat-label">Sedang Disewa</div>
-            <div class="stat-val">{{ $transaksiAktif }}</div>
+            <div class="stat-val">{{ $transaksiAktif ?? 0 }}</div>
             <span class="stat-tag up">↑ aktif hari ini</span>
         </div>
         <div class="stat-card">
             <div class="stat-ico orange-ico">💰</div>
             <div class="stat-label">Pendapatan Hari Ini</div>
-            <div class="stat-val"><span class="curr">Rp</span>{{ number_format($pendapatanHariIni, 0, ',', '.') }}</div>
+            <div class="stat-val"><span class="curr">Rp</span>{{ number_format($pendapatanHariIni ?? 0, 0, ',', '.') }}</div>
             <span class="stat-tag up">↑ dari kemarin</span>
         </div>
     </div>
@@ -37,31 +37,41 @@
     <div class="qa-section">
         <div class="qa-title">Aksi Cepat</div>
         <div class="qa-grid">
-            @if(session('user')['role'] == 'Karyawan')
-            <a href="{{ route('transaksi.create') }}" class="qa-card primary">
-                <div class="qa-ico black">👘</div>
-                <div>
-                    <div class="qa-label" style="color:#fff">Sewa Baru</div>
-                    <div class="qa-desc">Buat transaksi penyewaan</div>
-                </div>
-            </a>
+            @if(session('user')['role'] == 'Owner')
+                <a href="{{ route('barang.index') }}?modal=tambah" class="qa-card primary">
+                    <div class="qa-ico black">➕</div>
+                    <div>
+                        <div class="qa-label" style="color:#fff">Tambah Barang</div>
+                        <div class="qa-desc">Tambah koleksi baru</div>
+                    </div>
+                </a>
             @else
-            <a href="{{ route('barang.create') }}" class="qa-card primary">
-                <div class="qa-ico black">➕</div>
-                <div>
-                    <div class="qa-label" style="color:#fff">Tambah Barang</div>
-                    <div class="qa-desc">Tambah koleksi baru</div>
-                </div>
-            </a>
+                <a href="{{ route('transaksi.create') }}" class="qa-card primary">
+                    <div class="qa-ico black">👘</div>
+                    <div>
+                        <div class="qa-label" style="color:#fff">Sewa Baru</div>
+                        <div class="qa-desc">Buat transaksi penyewaan</div>
+                    </div>
+                </a>
             @endif
 
-            <a href="{{ route('transaksi.index') }}" class="qa-card">
-                <div class="qa-ico gold">↩️</div>
-                <div>
-                    <div class="qa-label">Kembalikan Baju</div>
-                    <div class="qa-desc">Proses pengembalian</div>
-                </div>
-            </a>
+            @if(session('user')['role'] == 'Karyawan')
+                <a href="{{ route('transaksi.index') }}" class="qa-card">
+                    <div class="qa-ico gold">↩️</div>
+                    <div>
+                        <div class="qa-label">Kembalikan Baju</div>
+                        <div class="qa-desc">Proses pengembalian</div>
+                    </div>
+                </a>
+            @else
+                <button class="qa-card" onclick="showAccessDeniedKembali()" style="width:100%; text-align:left; cursor:pointer;">
+                    <div class="qa-ico gold">↩️</div>
+                    <div>
+                        <div class="qa-label">Kembalikan Baju</div>
+                        <div class="qa-desc">Proses pengembalian</div>
+                    </div>
+                </button>
+            @endif
 
             <a href="{{ route('barang.index') }}" class="qa-card">
                 <div class="qa-ico soft">📋</div>
@@ -81,122 +91,81 @@
         </div>
     </div>
 
-    <!-- Bottom: Chart + Recent -->
-    <div class="dash-bottom">
-
-        <!-- Mini bar chart -->
-        <div class="card gold-top">
-            <div class="card-head">
-                <div>
-                    <div class="card-title">Penyewaan Bulanan</div>
-                    <div class="card-sub">Periode {{ \Carbon\Carbon::now()->subMonths(6)->format('F') }} – {{ \Carbon\Carbon::now()->format('F Y') }}</div>
-                </div>
-                <a href="{{ route('laporan') }}" style="font-size:11px;color:var(--gold-dk);text-decoration:none;font-weight:600;">Lihat Semua →</a>
+    <!-- Recent Transactions -->
+    <div class="card gold-top">
+        <div class="card-head">
+            <div>
+                <div class="card-title">Transaksi Terbaru</div>
+                <div class="card-sub">Aktivitas terbaru</div>
             </div>
-            <div class="mini-chart">
-                <canvas id="sewaChart" width="100%" height="170" style="max-height:170px"></canvas>
-            </div>
+            <a href="{{ route('transaksi.index') }}" style="font-size:11px;color:var(--gold-dk);text-decoration:none;font-weight:600;">Semua →</a>
         </div>
-
-        <!-- Recent Transactions -->
-        <div class="card gold-top">
-            <div class="card-head">
+        <div class="recent-list">
+            @forelse($transaksiTerbaru ?? [] as $trx)
+            <div class="recent-item">
+                <div class="ri-ava">{{ substr($trx->pelanggan->nama_pelanggan ?? '?', 0, 2) }}</div>
                 <div>
-                    <div class="card-title">Transaksi Terbaru</div>
-                    <div class="card-sub">Aktivitas terbaru</div>
-                </div>
-                <a href="{{ route('transaksi.index') }}" style="font-size:11px;color:var(--gold-dk);text-decoration:none;font-weight:600;">Semua →</a>
-            </div>
-            <div class="recent-list">
-                @forelse($transaksiTerbaru as $trx)
-                <div class="recent-item">
-                    <div class="ri-ava">{{ substr($trx->pelanggan->nama_pelanggan ?? '?', 0, 2) }}</div>
-                    <div>
-                        <div class="ri-name">{{ $trx->pelanggan->nama_pelanggan ?? '-' }}</div>
-                        <div class="ri-detail">
-                            @if($trx->detailTransaksis->first())
-                                {{ $trx->detailTransaksis->first()->barang->nama_barang ?? '-' }}
-                            @else
-                                -
-                            @endif
-                            · {{ \Carbon\Carbon::parse($trx->tgl_sewa)->diffInDays($trx->tgl_jatuh_tempo) }} hari
-                        </div>
-                    </div>
-                    <div style="text-align:right">
-                        <div class="ri-amount">Rp {{ number_format($trx->total_biaya ?? 0, 0, ',', '.') }}</div>
-                        <span class="ri-badge {{ ($trx->status_transaksi ?? '') == 'Diproses' ? 'out' : 'done' }}">
-                            {{ ($trx->status_transaksi ?? '') == 'Diproses' ? 'Disewa' : 'Selesai' }}
-                        </span>
+                    <div class="ri-name">{{ $trx->pelanggan->nama_pelanggan ?? '-' }}</div>
+                    <div class="ri-detail">
+                        @if($trx->detailTransaksis->first())
+                            {{ $trx->detailTransaksis->first()->barang->nama_barang ?? '-' }}
+                        @else
+                            -
+                        @endif
+                        · {{ \Carbon\Carbon::parse($trx->tgl_sewa)->diffInDays($trx->tgl_jatuh_tempo) }} hari
                     </div>
                 </div>
-                @empty
-                <div class="recent-item">Belum ada transaksi</div>
-                @endforelse
+                <div style="text-align:right">
+                    <div class="ri-amount">Rp {{ number_format($trx->total_biaya ?? 0, 0, ',', '.') }}</div>
+                    <span class="ri-badge {{ ($trx->status_transaksi ?? '') == 'Diproses' ? 'out' : 'done' }}">
+                        {{ ($trx->status_transaksi ?? '') == 'Diproses' ? 'Disewa' : 'Selesai' }}
+                    </span>
+                </div>
+            </div>
+            @empty
+            <div class="recent-item">Belum ada transaksi</div>
+            @endforelse
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL ACCESS DENIED -->
+<div class="modal-overlay" id="accessModal">
+    <div class="modal-popup" style="max-width: 360px; text-align: center;">
+        <div class="modal-popup-header" style="border-bottom: none; justify-content: center; padding-bottom: 0;">
+            <div class="modal-popup-title" style="color: #dc2626;">Akses Ditolak</div>
+        </div>
+        <div class="modal-popup-body" style="padding-top: 0;">
+            <div style="font-size: 48px; margin: 16px 0;">🔒</div>
+            <div class="modal-message" id="accessModalMessage" style="font-size: 13px; color: #52525b; line-height: 1.5;">
+                Anda tidak memiliki akses ke halaman ini.
             </div>
         </div>
-
+        <div class="modal-popup-footer" style="justify-content: center;">
+            <button class="btn-gold" onclick="closeAccessModal()" style="min-width: 140px;">OK, Mengerti</button>
+        </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Data untuk chart (contoh data dari 6 bulan terakhir)
-    const ctx = document.getElementById('sewaChart').getContext('2d');
-    
-    // Data dummy untuk 6 bulan terakhir
-    const bulanLabels = [];
-    const dataSewa = [];
-    
-    // Generate 6 bulan terakhir
-    for (let i = 5; i >= 0; i--) {
-        let date = new Date();
-        date.setMonth(date.getMonth() - i);
-        bulanLabels.push(date.toLocaleString('id-ID', { month: 'short' }));
-        dataSewa.push(Math.floor(Math.random() * 40) + 10);
+    function showAccessDeniedKembali() {
+        document.getElementById('accessModalMessage').innerHTML = 'Anda tidak memiliki akses ke fitur <strong>Kembalikan Baju</strong>. Fitur ini hanya untuk <strong>Karyawan</strong>.';
+        document.getElementById('accessModal').classList.add('show');
     }
-    
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: bulanLabels,
-            datasets: [{
-                label: 'Jumlah Penyewaan',
-                data: dataSewa,
-                backgroundColor: 'rgba(201, 168, 76, 0.7)',
-                borderColor: '#C9A84C',
-                borderWidth: 1,
-                borderRadius: 6,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#f0f0f0' },
-                    ticks: { stepSize: 10 }
-                },
-                x: {
-                    grid: { display: false }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.raw + ' sewa';
-                        }
-                    }
-                },
-                legend: { display: false }
-            }
+
+    function closeAccessModal() {
+        document.getElementById('accessModal').classList.remove('show');
+    }
+
+    document.getElementById('accessModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeAccessModal();
         }
     });
 </script>
 
 <style>
-/* Dashboard additional styles */
 .stat-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -209,11 +178,6 @@
     border-radius: 12px;
     padding: 20px 22px;
     position: relative;
-    transition: box-shadow 0.2s;
-}
-.stat-card:hover {
-    box-shadow: var(--sh-sm);
-    border-color: var(--gold-rim);
 }
 .stat-card::after {
     content: '';
@@ -327,14 +291,6 @@
     margin-top: 1px;
 }
 .qa-card.primary .qa-desc { color: rgba(255,255,255,0.4); }
-.dash-bottom {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr;
-    gap: 16px;
-}
-.mini-chart {
-    padding: 16px 18px 14px;
-}
 .recent-list {
     padding: 2px 0;
 }
@@ -391,6 +347,63 @@
 .ri-badge.done {
     background: rgba(45,166,110,.08);
     color: #1a8050;
+}
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+}
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+.modal-popup {
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    transform: scale(0.95);
+    transition: transform 0.25s ease;
+}
+.modal-overlay.show .modal-popup {
+    transform: scale(1);
+}
+.modal-popup-header {
+    padding: 20px 24px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.modal-popup-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--black);
+}
+.modal-popup-body {
+    padding: 24px;
+}
+.modal-popup-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    display: flex;
+    gap: 12px;
+    justify-content: center;
 }
 </style>
 @endsection

@@ -404,7 +404,8 @@ a { text-decoration: none; color: inherit; }
 .recent-item:last-child { border-bottom: none; }
 .recent-item:hover { background: var(--gray-50); }
 .ri-ava {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 32px; height: 32px;
+  border-radius: 50%;
   background: var(--black); border: 1.5px solid var(--gold-md);
   display: flex; align-items: center; justify-content: center;
   font-size: 11.5px; font-weight: 700; color: var(--gold-lt); flex-shrink: 0;
@@ -774,31 +775,23 @@ table.report-tbl { width: 100%; border-collapse: collapse; }
         Dashboard
     </a>
 
-    <!-- Inventaris (Owner only) -->
-    @if($userRole == 'Owner')
+    <!-- Inventaris (SEMUA ROLE) -->
     <a href="{{ route('barang.index') }}" class="nav-item {{ request()->routeIs('barang.*') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
-        Inventaris &amp; Stok
+        Inventaris & Stok
         <span class="nav-pill info">{{ $totalBarang ?? 0 }}</span>
     </a>
-    @else
-    <div class="nav-item" onclick="showAccessDenied('Inventaris & Stok', 'Owner')">
-        <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
-        Inventaris &amp; Stok
-        <span class="nav-pill info">{{ $totalBarang ?? 0 }}</span>
-    </div>
-    @endif
 
     <!-- Transaksi (Karyawan only) -->
     @if($userRole == 'Karyawan')
     <a href="{{ route('transaksi.index') }}" class="nav-item {{ request()->routeIs('transaksi.*') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-        Transaksi &amp; E-Nota
+        Transaksi & E-Nota
     </a>
     @else
     <div class="nav-item" onclick="showAccessDenied('Transaksi & E-Nota', 'Karyawan')">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
-        Transaksi &amp; E-Nota
+        Transaksi & E-Nota
     </div>
     @endif
 

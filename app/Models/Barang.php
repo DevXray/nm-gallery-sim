@@ -11,12 +11,37 @@ class Barang extends Model
 
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
-    protected $fillable = [
-        'nama_barang', 'status_barang', 'harga_sewa'
-    ];
+   protected $fillable = [
+    'nama_barang',
+    'ukuran',
+    'harga_sewa',
+    'stok',
+    'status_barang',
+    'foto'   
+];
 
-    public function detailTransaksis()
+    // Ambil stok per ukuran (dari JSON)
+    public function getStokPerUkuranAttribute()
     {
-        return $this->hasMany(DetailTransaksi::class, 'id_barang', 'id_barang');
+        return json_decode($this->stok, true) ?: [];
+    }
+
+    // Set stok per ukuran (ke JSON)
+    public function setStokPerUkuranAttribute($value)
+    {
+        $this->stok = json_encode($value);
+    }
+
+    // Kurangi stok untuk ukuran tertentu
+    public function kurangiStok($ukuran, $jumlah = 1)
+    {
+        $stokArray = $this->getStokPerUkuranAttribute();
+        if (isset($stokArray[$ukuran]) && $stokArray[$ukuran] >= $jumlah) {
+            $stokArray[$ukuran] -= $jumlah;
+            $this->stok = json_encode($stokArray);
+            $this->save();
+            return true;
+        }
+        return false;
     }
 }

@@ -10,13 +10,8 @@ class PelangganController extends Controller
     public function index()
     {
         $pelanggan = Pelanggan::all();
-        $totalPelanggan = Pelanggan::count();  // <-- Tambahkan ini
+        $totalPelanggan = Pelanggan::count();
         return view('pelanggan.index', compact('pelanggan', 'totalPelanggan'));
-    }
-
-    public function create()
-    {
-        return view('pelanggan.create');
     }
 
     public function store(Request $request)
@@ -27,13 +22,11 @@ class PelangganController extends Controller
         ]);
 
         Pelanggan::create($request->all());
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
         return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil ditambahkan');
-    }
-
-    public function edit($id)
-    {
-        $pelanggan = Pelanggan::findOrFail($id);
-        return view('pelanggan.edit', compact('pelanggan'));
     }
 
     public function update(Request $request, $id)
@@ -45,6 +38,10 @@ class PelangganController extends Controller
 
         $pelanggan = Pelanggan::findOrFail($id);
         $pelanggan->update($request->all());
+        
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
         return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil diupdate');
     }
 

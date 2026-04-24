@@ -23,21 +23,34 @@ Route::middleware('auth.session')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
-    // ONLY OWNER
+    // SEMUA ROLE (READ ONLY untuk barang)
+    Route::get('/barang', [BarangController::class, 'index'])->name('barang.index');
+    
+    // ONLY OWNER (CREATE, UPDATE, DELETE)
     Route::middleware(['role:Owner'])->group(function () {
-        Route::resource('barang', BarangController::class);
+        Route::post('/barang', [BarangController::class, 'store'])->name('barang.store');
+        Route::put('/barang/{barang}', [BarangController::class, 'update'])->name('barang.update');
+        Route::delete('/barang/{barang}', [BarangController::class, 'destroy'])->name('barang.destroy');
+        
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
-Route::get('/laporan/export/excel', [LaporanController::class, 'exportExcel'])->name('laporan.export.excel');
-Route::get('/laporan/export/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.export.pdf');
+        Route::get('/laporan/export/excel', [LaporanController::class, 'exportExcel'])->name('laporan.export.excel');
+        Route::get('/laporan/export/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.export.pdf');
         Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan');
-         
-Route::post('/pengaturan/profile', [PengaturanController::class, 'updateProfile'])->name('pengaturan.update.profile');
-Route::post('/pengaturan/password', [PengaturanController::class, 'updatePassword'])->name('pengaturan.update.password');
+        Route::post('/pengaturan/profile', [PengaturanController::class, 'updateProfile'])->name('pengaturan.update.profile');
+        Route::post('/pengaturan/password', [PengaturanController::class, 'updatePassword'])->name('pengaturan.update.password');
+        Route::post('/pengaturan/tambah-user', [PengaturanController::class, 'tambahUser'])->name('pengaturan.tambah.user');
+        Route::post('/pengaturan/update-tarif', [PengaturanController::class, 'updateTarif'])->name('pengaturan.update.tarif');
+        Route::post('/pengaturan/update-profil-toko', [PengaturanController::class, 'updateProfilToko'])->name('pengaturan.update.profil_toko');
     });
     
     // ONLY KARYAWAN
     Route::middleware(['role:Karyawan'])->group(function () {
-        Route::resource('transaksi', TransaksiController::class);
+        Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi.index');
+        Route::get('/transaksi/create', [TransaksiController::class, 'create'])->name('transaksi.create');
+        Route::post('/transaksi', [TransaksiController::class, 'store'])->name('transaksi.store');
+        Route::get('/transaksi/{transaksi}', [TransaksiController::class, 'show'])->name('transaksi.show');
+        Route::put('/transaksi/{transaksi}', [TransaksiController::class, 'update'])->name('transaksi.update');
+        Route::delete('/transaksi/{transaksi}', [TransaksiController::class, 'destroy'])->name('transaksi.destroy');
     });
     
     // SEMUA ROLE

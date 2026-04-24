@@ -12,13 +12,24 @@ use Illuminate\Support\Facades\DB;
 class TransaksiController extends Controller
 {
     // Halaman FORM transaksi (index)
-    public function index()
-    {
-        $barangs = Barang::where('status_barang', 'Tersedia')->get();
-        $pelanggans = Pelanggan::all();
-        return view('transaksi.index', compact('barangs', 'pelanggans'));
+public function index()
+{
+    $barangs = Barang::where('status_barang', 'Tersedia')->get();
+    $pelanggans = Pelanggan::all();
+    
+    // Untuk auto-fill dari parameter
+    $selectedPelanggan = null;
+    if (request()->has('pelanggan')) {
+        $selectedPelanggan = Pelanggan::find(request()->get('pelanggan'));
     }
-
+    
+    $selectedBarang = null;
+    if (request()->has('barang')) {
+        $selectedBarang = Barang::find(request()->get('barang'));
+    }
+    
+    return view('transaksi.index', compact('barangs', 'pelanggans', 'selectedPelanggan', 'selectedBarang'));
+}
     // Simpan transaksi
    public function store(Request $request)
 {
@@ -138,10 +149,23 @@ class TransaksiController extends Controller
     }
 
     // Method yang tidak dipakai (resource requirement)
-    public function create()
-    {
-        abort(404);
+ public function create()
+{
+    // Redirect ke index dengan parameter
+    $query = [];
+    if (request()->has('pelanggan')) {
+        $query['pelanggan'] = request()->get('pelanggan');
     }
+    if (request()->has('barang')) {
+        $query['barang'] = request()->get('barang');
+    }
+    
+    if (!empty($query)) {
+        return redirect()->route('transaksi.index', $query);
+    }
+    
+    return redirect()->route('transaksi.index');
+}
 
     public function edit($id)
     {

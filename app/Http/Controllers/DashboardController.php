@@ -13,6 +13,10 @@ class DashboardController extends Controller
     {
         $totalBarang = Barang::count();
         $barangTersedia = Barang::where('status_barang', 'Tersedia')->count();
+        $barangDisewa = Barang::where('status_barang', 'Disewa')->count();
+        $barangLaundry = Barang::where('status_barang', 'Laundry')->count();
+        $barangRusak = Barang::where('status_barang', 'Rusak')->count();
+        
         $transaksiAktif = Transaksi::where('status_transaksi', 'Diproses')->count();
         
         $pendapatanHariIni = Transaksi::whereDate('created_at', today())
@@ -24,8 +28,14 @@ class DashboardController extends Controller
             ->get();
         
         return view('dashboard.index', compact(
-            'totalBarang', 'barangTersedia', 'transaksiAktif',
-            'pendapatanHariIni', 'transaksiTerbaru'
+            'totalBarang', 
+            'barangTersedia',
+            'barangDisewa',
+            'barangLaundry',
+            'barangRusak',
+            'transaksiAktif',
+            'pendapatanHariIni', 
+            'transaksiTerbaru'
         ));
     }
 }
