@@ -149,24 +149,29 @@ public function index()
     }
 
     // Method yang tidak dipakai (resource requirement)
- public function create()
+public function create()
 {
-    // Redirect ke index dengan parameter
-    $query = [];
+    $barangs = Barang::where('status_barang', 'Tersedia')->get();
+    $pelanggans = Pelanggan::all();
+    
+    $selectedPelanggan = null;
     if (request()->has('pelanggan')) {
-        $query['pelanggan'] = request()->get('pelanggan');
+        $selectedPelanggan = Pelanggan::find(request()->get('pelanggan'));
     }
+    
+    $selectedBarang = null;
     if (request()->has('barang')) {
-        $query['barang'] = request()->get('barang');
+        $selectedBarang = Barang::find(request()->get('barang'));
+        // Debug: cek apakah barang ditemukan dan stoknya
+        \Log::info('Selected Barang:', [
+            'id' => $selectedBarang->id_barang ?? null,
+            'nama' => $selectedBarang->nama_barang ?? null,
+            'stok' => $selectedBarang->stok ?? null
+        ]);
     }
     
-    if (!empty($query)) {
-        return redirect()->route('transaksi.index', $query);
-    }
-    
-    return redirect()->route('transaksi.index');
+    return view('transaksi.index', compact('barangs', 'pelanggans', 'selectedPelanggan', 'selectedBarang'));
 }
-
     public function edit($id)
     {
         abort(404);
