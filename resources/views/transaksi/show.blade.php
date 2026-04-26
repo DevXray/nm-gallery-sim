@@ -12,7 +12,7 @@
         </div>
         <div style="display:flex;gap:10px">
             <a href="{{ route('transaksi.index') }}" class="btn-white">← Buat Transaksi Baru</a>
-            <button class="btn-gold" onclick="window.print()">🖨 Cetak E-Nota</button>
+            <button class="btn-gold" onclick="window.open('{{ route('transaksi.print', $transaksi->id_transaksi) }}', '_blank')">🖨 Cetak E-Nota (PDF)</button>
         </div>
     </div>
 </div>
@@ -107,7 +107,7 @@
     </div>
 
     <!-- RIGHT: E-Nota -->
-    <div class="nota-panel" id="notaPrint">
+    <div class="nota-panel">
         <div class="nota-preview-hd">
             <div class="nota-preview-title">E-Nota Digital</div>
             <span style="font-size:10.5px;color:var(--gray-400)">Bukti Transaksi Resmi</span>
@@ -145,17 +145,16 @@
                 </div>
             </div>
         </div>
-        <button class="nota-gen-btn" onclick="window.print()">🖨 Cetak E-Nota</button>
+        <button class="nota-gen-btn" onclick="window.open('{{ route('transaksi.print', $transaksi->id_transaksi) }}', '_blank')">🖨 Cetak E-Nota (PDF)</button>
     </div>
 </div>
 
 <style>
 @media print {
-    .sidebar, .topbar, .pg-head, .form-card, .nota-gen-btn { display: none !important; }
-    body { background: white !important; overflow: visible !important; }
-    .main { overflow: visible !important; }
-    .content { overflow: visible !important; padding: 0 !important; }
-    .nota-panel { box-shadow: none !important; border: none !important; width: 100% !important; }
+    .sidebar, .topbar, .pg-head, .form-card, .nota-gen-btn, .btn-white, .btn-gold { display: none !important; }
+    body { background: white !important; }
+    .nota-panel { box-shadow: none !important; border: none !important; width: 100% !important; margin: 0 !important; }
+    .nota-paper { margin: 0 !important; border: none !important; }
 }
 </style>
 @endsection
