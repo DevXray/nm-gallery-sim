@@ -93,10 +93,9 @@
                             
                             @if(session('user')['role'] == 'Owner')
                             <!-- Tombol Edit & Hapus (ONLY OWNER) -->
-<button class="row-btn" onclick='showEditBarangModal({{ $item->id_barang }}, "{{ addslashes($item->nama_barang) }}", "{{ $item->ukuran }}", {{ $item->harga_sewa }}, {{ json_encode($stokArray) }}, "{{ $item->status_barang }}", "{{ $item->foto }}")' title="Edit">✏️</button>                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="row-btn" style="background:none; cursor:pointer;" title="Hapus">🗑️</button>
-                            </form>
+                            <!-- SESUDAH (BENAR — delete pakai JavaScript fetch): -->
+                                <button class="row-btn" onclick='showEditBarangModal({{ $item->id_barang }}, "{{ addslashes($item->nama_barang) }}", "{{ $item->ukuran }}", {{ $item->harga_sewa }}, {{ json_encode($stokArray) }}, "{{ $item->status_barang }}", "{{ $item->foto }}")' title="Edit">✏️</button>
+                                <button class="row-btn" onclick="hapusBarang({{ $item->id_barang }}, '{{ addslashes($item->nama_barang) }}')" title="Hapus" style="background:none;border:1px solid var(--gray-200);cursor:pointer;">🗑️</button>
                             @endif
                         </div>
                     </td>
@@ -807,6 +806,31 @@ function applyFilter() {
         }, 5000);
     }
 }
+
+function hapusBarang(id, nama) {
+    if (!confirm(`Hapus barang "${nama}"?\n\nTindakan ini tidak bisa dibatalkan.`)) return;
+
+    fetch('/barang/' + id, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            // Hapus baris dari tabel tanpa reload
+            const row = document.querySelector(`button[onclick*="hapusBarang(${id},"]`).closest('tr');
+            if (row) { row.style.opacity = '0'; setTimeout(() => { row.remove(); }, 300); }
+        } else {
+            alert('Gagal menghapus: ' + (d.message || 'Terjadi kesalahan'));
+        }
+    })
+    .catch(err => alert('Error: ' + err));
+}
+
 </script>
 
 <style>

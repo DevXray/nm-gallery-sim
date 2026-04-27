@@ -66,7 +66,6 @@ public function update(Request $request, $id)
             'stok' => 'required',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
-
         $barang = Barang::findOrFail($id);
         
         // Upload foto baru
@@ -108,6 +107,14 @@ public function update(Request $request, $id)
     public function destroy($id)
     {
         $barang = Barang::findOrFail($id);
+
+        if ($barang->status_barang === 'Disewa') {
+        return response()->json(['success' => false, 'message' => 'Barang sedang disewa, tidak bisa dihapus!']);
+        }
+        if ($barang->foto && file_exists(public_path($barang->foto))) {
+            unlink(public_path($barang->foto));
+        }
+
         $barang->delete();
         
         if (request()->ajax()) {
