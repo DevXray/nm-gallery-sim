@@ -36,6 +36,7 @@ Route::middleware('auth.session')->group(function () {
         Route::get('/laporan/export/excel', [LaporanController::class, 'exportExcel'])->name('laporan.export.excel');
         Route::get('/laporan/export/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.export.pdf');
         Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan');
+        
         Route::post('/pengaturan/profile', [PengaturanController::class, 'updateProfile'])->name('pengaturan.update.profile');
         Route::post('/pengaturan/password', [PengaturanController::class, 'updatePassword'])->name('pengaturan.update.password');
         Route::post('/pengaturan/tambah-user', [PengaturanController::class, 'tambahUser'])->name('pengaturan.tambah.user');
@@ -51,8 +52,13 @@ Route::middleware('auth.session')->group(function () {
         Route::get('/transaksi/{transaksi}', [TransaksiController::class, 'show'])->name('transaksi.show');
         Route::put('/transaksi/{transaksi}', [TransaksiController::class, 'update'])->name('transaksi.update');
         Route::delete('/transaksi/{transaksi}', [TransaksiController::class, 'destroy'])->name('transaksi.destroy');
+        
+        // Cetak PDF transaksi
+        Route::get('/transaksi/{id}/print', [TransaksiController::class, 'printPdf'])->name('transaksi.print');
+        Route::post('/transaksi/preview-pdf', [TransaksiController::class, 'previewPdf'])->name('transaksi.preview-pdf');
     });
     
-    // SEMUA ROLE
+    // SEMUA ROLE - Pelanggan
+    Route::get('/pelanggan/export-pdf', [PelangganController::class, 'exportPDF'])->name('pelanggan.export.pdf');
     Route::resource('pelanggan', PelangganController::class);
 });

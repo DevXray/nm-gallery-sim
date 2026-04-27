@@ -21,16 +21,16 @@
         <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r3);padding:16px 18px;border-top:2px solid var(--gold);box-shadow:var(--sh-xs)">
             <div style="font-size:10.5px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Total Pelanggan</div>
             <div style="font-size:28px;font-weight:800;color:var(--black);letter-spacing:-.5px">{{ $totalPelanggan }}</div>
-            <div style="font-size:11px;color:var(--gray-400);margin-top:4px">+{{ rand(1,10) }} bulan ini</div>
+            <div style="font-size:11px;color:var(--gray-400);margin-top:4px">{{ $pelangganBaruBulanIni ?? 0 }} bulan ini</div>
         </div>
         <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r3);padding:16px 18px;border-top:2px solid #2da66e;box-shadow:var(--sh-xs)">
             <div style="font-size:10.5px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Sedang Menyewa</div>
-            <div style="font-size:28px;font-weight:800;color:var(--black);letter-spacing:-.5px">{{ rand(5,20) }}</div>
+            <div style="font-size:28px;font-weight:800;color:var(--black);letter-spacing:-.5px">{{ $sedangMenyewa ?? 0 }}</div>
             <div style="font-size:11px;color:var(--gray-400);margin-top:4px">Aktif hari ini</div>
         </div>
         <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r3);padding:16px 18px;border-top:2px solid #e07040;box-shadow:var(--sh-xs)">
             <div style="font-size:10.5px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Pelanggan Setia</div>
-            <div style="font-size:28px;font-weight:800;color:var(--black);letter-spacing:-.5px">{{ rand(1,10) }}</div>
+            <div style="font-size:28px;font-weight:800;color:var(--black);letter-spacing:-.5px">{{ $pelangganSetia ?? 0 }}</div>
             <div style="font-size:11px;color:var(--gray-400);margin-top:4px">Sewa ≥ 3 kali</div>
         </div>
     </div>
@@ -43,11 +43,10 @@
         </div>
         <div class="filter-chips">
             <div class="chip active" onclick="setChip(this)">Semua ({{ $totalPelanggan }})</div>
-            <div class="chip" onclick="setChip(this)">Aktif ({{ rand(5,20) }})</div>
-            <div class="chip" onclick="setChip(this)">Riwayat Saja ({{ rand(1,10) }})</div>
+            <div class="chip" onclick="setChip(this)">Aktif ({{ $sedangMenyewa ?? 0 }})</div>
+            <div class="chip" onclick="setChip(this)">Riwayat Saja ({{ $totalPelanggan - ($sedangMenyewa ?? 0) }})</div>
         </div>
-        <button class="btn-outline" style="margin-left:auto" onclick="exportPelangganPDF()">📄 Export PDF</button>
-    </div>
+<button class="btn-outline" onclick="window.location.href='{{ route("pelanggan.export.pdf") }}'">📄 Export PDF</button>    </div>
 
     <!-- Pelanggan table -->
     <div class="inv-table-card">
@@ -71,16 +70,27 @@
                             <div style="width:34px;height:34px;border-radius:50%;background:var(--black);border:1.5px solid var(--gold-md);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold-lt);flex-shrink:0">{{ substr($item->nama_pelanggan, 0, 2) }}</div>
                             <div>
                                 <div style="font-size:13px;font-weight:600;color:var(--black)">{{ $item->nama_pelanggan }}</div>
-                                <div style="font-size:10.5px;color:var(--gray-400)">Makassar, Sul-Sel</div>
+                                <div style="font-size:10.5px;color:var(--gray-400)">{{ $item->alamat ?: 'Alamat tidak tersedia' }}</div>
                             </div>
                         </div>
                     </td>
                     <td class="font-mono" style="font-size:12px;color:var(--gray-600)">{{ $item->no_telp }}</td>
-                    <td style="text-align:center"><span style="background:var(--gold-xs);color:var(--gold-dk);border:1px solid var(--gold-md);padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:700">{{ rand(1,10) }}×</span></td>
-                    <td style="font-size:12px;color:var(--gray-500)">{{ $item->created_at->format('d M Y') }}</td>
-                    <td class="td-mono td-gold" style="font-size:12px">Rp {{ number_format(rand(500000, 5000000), 0, ',', '.') }}</td>
+                    <td style="text-align:center">
+                        <span style="background:var(--gold-xs);color:var(--gold-dk);border:1px solid var(--gold-md);padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:700">
+                            {{ $item->transaksi_count ?? 0 }}×
+                        </span>
+                    </td>
+                    <td style="font-size:12px;color:var(--gray-500)">
+                        {{ $item->terakhir_sewa ? \Carbon\Carbon::parse($item->terakhir_sewa)->format('d M Y') : '-' }}
+                    </td>
+                    <td class="td-mono td-gold" style="font-size:12px">
+                        Rp {{ number_format($item->transaksi_sum_total_biaya ?? 0, 0, ',', '.') }}
+                    </td>
                     <td>
-                        @if(rand(0,1) == 1)
+                        @php
+                            $statusAktif = ($item->transaksi_count > 0) ? true : false;
+                        @endphp
+                        @if($statusAktif)
                             <span class="badge badge-out">Aktif Sewa</span>
                         @else
                             <span class="badge badge-ready" style="background:rgba(45,166,110,.08);color:#1a8050;border-color:rgba(45,166,110,.2)">Selesai</span>
@@ -88,12 +98,7 @@
                     </td>
                     <td>
                         <div class="row-acts">
-                            <button class="row-btn" onclick="showEditPelangganModal({{ $item->id_pelanggan }}, '{{ $item->nama_pelanggan }}', '{{ $item->no_telp }}', '{{ $item->alamat }}')" title="Edit">✏️</button>
-                            <form action="{{ route('pelanggan.destroy', $item->id_pelanggan) }}" method="POST" style="display:inline;" onsubmit="return confirm('Hapus pelanggan ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="row-btn" style="background:none; cursor:pointer;" title="Hapus">🗑️</button>
-                            </form>
+                            <button class="row-btn" onclick="showEditPelangganModal({{ $item->id_pelanggan }}, '{{ addslashes($item->nama_pelanggan) }}', '{{ $item->no_telp }}', '{{ addslashes($item->alamat) }}')" title="Edit">✏️</button>
                             @if(session('user')['role'] == 'Karyawan')
                                 <a href="{{ route('transaksi.create') }}?pelanggan={{ $item->id_pelanggan }}" class="row-btn" title="Buat Sewa">📋</a>
                             @else
@@ -445,6 +450,32 @@
     border-color: #C9A84C;
     box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
 }
+.btn-gold {
+    background: #C9A84C;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+}
+.btn-white {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 8px 20px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-outline {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
 </style>
 
 <script>
@@ -453,16 +484,54 @@
     function setChip(el) {
         el.closest('.filter-chips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
+        
+        let filterText = el.innerText.toLowerCase();
+        let rows = document.querySelectorAll('#pelangganTableBody tr');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            let status = row.querySelector('.badge')?.innerText.toLowerCase() || '';
+            if (filterText.includes('semua')) {
+                row.style.display = '';
+                visibleCount++;
+            } else if (filterText.includes('aktif') && status === 'aktif sewa') {
+                row.style.display = '';
+                visibleCount++;
+            } else if (filterText.includes('riwayat') && !status.includes('aktif')) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        let infoText = document.querySelector('.pg-info');
+        if (infoText) {
+            infoText.innerHTML = `Menampilkan ${visibleCount} dari {{ $totalPelanggan }} pelanggan`;
+        }
     }
     
     document.getElementById('searchInput').addEventListener('keyup', function() {
         let filter = this.value.toLowerCase();
         let rows = document.querySelectorAll('#pelangganTableBody tr');
+        let visibleCount = 0;
+        
         rows.forEach(row => {
+            if (row.style.display === 'none') return;
             let name = row.querySelector('.ri-name')?.innerText.toLowerCase() || '';
             let tel = row.querySelector('.font-mono')?.innerText.toLowerCase() || '';
-            row.style.display = (name.includes(filter) || tel.includes(filter)) ? '' : 'none';
+            if (name.includes(filter) || tel.includes(filter)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
         });
+        
+        let infoText = document.querySelector('.pg-info');
+        if (infoText) {
+            infoText.innerHTML = `Menampilkan ${visibleCount} dari {{ $totalPelanggan }} pelanggan`;
+        }
     });
 
     // EXPORT PDF SEMUA PELANGGAN
@@ -473,13 +542,14 @@
         rows.forEach(row => {
             if (row.style.display !== 'none') {
                 let nama = row.querySelector('.ri-name')?.innerText || '';
+                let alamat = row.querySelector('.ri-detail')?.innerText || '';
                 let telp = row.querySelector('.font-mono')?.innerText || '';
                 let totalSewa = row.querySelector('td:nth-child(3) span')?.innerText || '0×';
                 let terakhirSewa = row.querySelector('td:nth-child(4)')?.innerText || '-';
                 let totalBayar = row.querySelector('.td-gold')?.innerText || 'Rp 0';
                 let status = row.querySelector('.badge')?.innerText || '-';
                 
-                dataPelanggan.push({ nama, telp, totalSewa, terakhirSewa, totalBayar, status });
+                dataPelanggan.push({ nama, alamat, telp, totalSewa, terakhirSewa, totalBayar, status });
             }
         });
         
@@ -511,12 +581,13 @@
                     <p>Total Pelanggan: ${dataPelanggan.length}</p>
                 </div>
                 <table>
-                    <thead><tr><th>No</th><th>Nama Pelanggan</th><th>No. Telepon</th><th>Total Sewa</th><th>Terakhir Sewa</th><th>Total Bayar</th><th>Status</th></tr></thead>
+                    <thead><tr><th>No</th><th>Nama Pelanggan</th><th>Alamat</th><th>No. Telepon</th><th>Total Sewa</th><th>Terakhir Sewa</th><th>Total Bayar</th><th>Status</th></tr></thead>
                     <tbody>
                         ${dataPelanggan.map((p, i) => `
                             <tr>
                                 <td>${i + 1}</td>
                                 <td>${p.nama}</td>
+                                <td>${p.alamat}</td>
                                 <td>${p.telp}</td>
                                 <td style="text-align:center">${p.totalSewa}</td>
                                 <td>${p.terakhirSewa}</td>
@@ -539,7 +610,6 @@
         printWindow.document.close();
     }
 
-    // ACCESS DENIED UNTUK BUAT SEWA (OWNER)
     function showAccessDeniedSewa() {
         alert('Akses Ditolak! Fitur "Buat Sewa" hanya untuk Karyawan.');
     }

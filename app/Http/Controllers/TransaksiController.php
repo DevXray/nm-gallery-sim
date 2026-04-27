@@ -33,13 +33,13 @@ public function index()
     // Simpan transaksi
    public function store(Request $request)
 {
-    $request->validate([
-        'nama_pelanggan' => 'required',
-        'no_telp' => 'required',
-        'id_barang' => 'required',
-        'tgl_sewa' => 'required|date',
-        'tgl_jatuh_tempo' => 'required|date',
-    ]);
+   $request->validate([
+    'nama_pelanggan' => 'required',
+    'no_telp' => 'required',
+    'id_barang' => 'required',
+    'tgl_sewa' => 'required|date',
+    'tgl_jatuh_tempo' => 'required|date',
+]);
 
     DB::beginTransaction();
     try {
@@ -58,11 +58,12 @@ public function index()
         $barang = Barang::findOrFail($request->id_barang);
         
         // Hitung durasi
-        $tglSewa = new \DateTime($request->tgl_sewa);
-        $tglKembali = new \DateTime($request->tgl_jatuh_tempo);
-        $durasi = $tglSewa->diff($tglKembali)->days;
-        if ($durasi == 0) $durasi = 1;
-        
+       $tglSewa = new \DateTime($request->tgl_sewa);
+$tglKembali = new \DateTime($request->tgl_jatuh_tempo);
+$diff = $tglSewa->diff($tglKembali);
+$durasi = $diff->days * 24 + $diff->h; // durasi dalam jam, lalu diubah ke hari
+$durasi = ceil($durasi / 24); // dibulatkan ke atas
+if ($durasi == 0) $durasi = 1;
         $total_biaya = $barang->harga_sewa * $durasi;
 
         // Buat transaksi
@@ -176,4 +177,65 @@ public function create()
     {
         abort(404);
     }
+    
+   public function printPdf($id)
+{
+    $transaksi = Transaksi::with(['pelanggan', 'detailTransaksis.barang'])->findOrFail($id);
+    
+    $data = [
+        'transaksi' => $transaksi,
+        'title' => 'E-NOTA TRANSAKSI'
+    ];
+    
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('transaksi.pdf', $data);
+    // Ukuran A6 (105x148mm) - enak dilihat di HP
+    $pdf->setPaper('a6', 'portrait');
+    return $pdf->stream('e-nota_' . $transaksi->id_transaksi . '.pdf');
+}
+
+public function previewPdf(Request $request)
+{
+    // Buat objek transaksi sementara untuk preview
+    $transaksi = new \stdClass();
+    $transaksi->id_transaksi = rand(1000, 9999);
+    $transaksi->created_at = now();
+    $transaksi->tgl_sewa = $request->tgl_sewa;
+    $transaksi->tgl_jatuh_tempo = $request->tgl_jatuh_tempo;
+    $transaksi->total_biaya = 0;
+    $transaksi->total_denda = 0;
+    $transaksi->status_transaksi = 'Diproses';
+    
+    // Pelanggan
+    $pelanggan = new \stdClass();
+    $pelanggan->nama_pelanggan = $request->nama_pelanggan;
+    $pelanggan->no_telp = $request->no_telp;
+    $pelanggan->alamat = $request->alamat;
+    $transaksi->pelanggan = $pelanggan;
+    
+    // Detail transaksi
+    $items = json_decode($request->items, true);
+    $detailTransaksis = [];
+    $barang = Barang::find($request->id_barang);
+    
+    $tglSewa = new \DateTime($request->tgl_sewa);
+    $tglJatuh = new \DateTime($request->tgl_jatuh_tempo);
+    $diff = $tglSewa->diff($tglJatuh);
+    $durasi = $diff->days;
+    if ($durasi == 0) $durasi = 1;
+    
+    foreach ($items as $item) {
+        $detail = new \stdClass();
+        $detail->barang = $barang;
+        $detail->ukuran = $item['size'];
+        $detail->kuantitas = $item['jumlah'];
+        $detail->sub_total = $item['harga'] * $item['jumlah'] * $durasi;
+        $transaksi->total_biaya += $detail->sub_total;
+        $detailTransaksis[] = $detail;
+    }
+    $transaksi->detailTransaksis = collect($detailTransaksis);
+    
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('transaksi.pdf', ['transaksi' => $transaksi]);
+    $pdf->setPaper('a6', 'portrait');
+    return $pdf->download('e-nota_preview.pdf');
+}
 }
