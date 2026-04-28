@@ -35,6 +35,19 @@
 </div>
 @endif
 
+{{--
+    Kalkulasi "yang dibayar saat pengembalian":
+    - Untuk Lunas : seluruh biaya sudah dibayar di awal, saat kembali hanya ada denda (jika terlambat).
+    - Untuk DP    : yang dibayar saat kembali = sisa tagihan asli + denda.
+                    Sisa tagihan asli = total_biaya - jumlah_dp.
+                    Kita tidak bisa membaca sisa_tagihan dari DB lagi karena sudah di-set ke 0
+                    saat pengembalian diproses. Jadi kita hitung ulang dari total_biaya & jumlah_dp.
+--}}
+@php
+    $sisaYangDilunasi = max(0, $transaksi->total_biaya - ($transaksi->jumlah_dp ?? $transaksi->total_biaya));
+    $totalDibayarSaatKembali = $sisaYangDilunasi + ($transaksi->total_denda ?? 0);
+@endphp
+
 <div style="display:grid;grid-template-columns:1fr 360px;gap:20px">
 
     <!-- ====================================================== -->
@@ -63,7 +76,7 @@
                         <label class="flbl">Baju yang Disewa</label>
                         <input type="text" class="finput" readonly
                             value="{{ $transaksi->detailTransaksis->first()->barang->nama_barang ?? '-' }}
-                                   @if($transaksi->detailTransaksis->first()->ukuran)
+                                   @if($transaksi->detailTransaksis->first() && $transaksi->detailTransaksis->first()->ukuran)
                                    ({{ $transaksi->detailTransaksis->first()->ukuran }})
                                    @endif">
                     </div>
@@ -121,9 +134,11 @@
                             style="color:#1a8050;font-weight:700;font-family:monospace">
                     </div>
                     <div class="field">
-                        <label class="flbl">Sisa Tagihan</label>
+                        <label class="flbl">
+                            {{ $transaksi->status_transaksi == 'Selesai' ? 'Sisa Tagihan (Dilunasi)' : 'Sisa Tagihan' }}
+                        </label>
                         <input type="text" class="finput" readonly
-                            value="Rp {{ number_format($transaksi->sisa_tagihan ?? 0, 0, ',', '.') }}"
+                            value="Rp {{ number_format($sisaYangDilunasi, 0, ',', '.') }}"
                             style="color:#c0392b;font-weight:700;font-family:monospace">
                     </div>
                     @endif
@@ -143,6 +158,11 @@
         <!-- FORM PROSES PENGEMBALIAN (hanya jika masih Diproses) -->
         <!-- ====================================================== -->
         @if($transaksi->status_transaksi == 'Diproses')
+        @php
+            $sisaTagihanSaatIni = $transaksi->sisa_tagihan ?? 0;
+            $totalDendaKini     = $dendaInfo['total_denda'];
+            $totalBayarKembali  = $sisaTagihanSaatIni + $totalDendaKini;
+        @endphp
         <div class="form-card" style="border-top:3px solid {{ $dendaInfo['terlambat'] ? '#e74c3c' : 'var(--gold)' }}">
             <div class="form-sect" style="background: {{ $dendaInfo['terlambat'] ? 'rgba(220,80,60,.04)' : 'var(--gold-xs)' }}">
                 <div class="form-sect-lbl">↩️ Proses Pengembalian</div>
@@ -154,7 +174,7 @@
                         Jatuh tempo: {{ \Carbon\Carbon::parse($transaksi->tgl_jatuh_tempo)->format('d M Y') }} ·
                         Denda: Rp {{ number_format($dendaInfo['denda_per_hari'], 0, ',', '.') }}/hari ×
                         {{ $dendaInfo['hari_telat'] }} hari =
-                        <strong style="color:#c0392b">Rp {{ number_format($dendaInfo['total_denda'], 0, ',', '.') }}</strong>
+                        <strong style="color:#c0392b">Rp {{ number_format($totalDendaKini, 0, ',', '.') }}</strong>
                     </div>
                 </div>
                 @else
@@ -164,18 +184,12 @@
                 @endif
 
                 <!-- Ringkasan Total yang Harus Dibayar Saat Kembali -->
-                @php
-                    $sisaTagihan = $transaksi->sisa_tagihan ?? 0;
-                    $totalDendaKini = $dendaInfo['total_denda'];
-                    $totalBayarKembali = $sisaTagihan + $totalDendaKini;
-                @endphp
-
                 <div style="background:white;border:1.5px solid {{ $dendaInfo['terlambat'] ? 'rgba(220,80,60,.3)' : 'var(--gold-md)' }};border-radius:12px;padding:16px;margin-bottom:16px">
                     <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:12px;letter-spacing:.8px">Ringkasan Tagihan Pengembalian</div>
-                    @if($sisaTagihan > 0)
+                    @if($sisaTagihanSaatIni > 0)
                     <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid #f0f0f0">
                         <span style="color:#666">Sisa DP</span>
-                        <span style="font-family:monospace;font-weight:600">Rp {{ number_format($sisaTagihan, 0, ',', '.') }}</span>
+                        <span style="font-family:monospace;font-weight:600">Rp {{ number_format($sisaTagihanSaatIni, 0, ',', '.') }}</span>
                     </div>
                     @endif
                     @if($totalDendaKini > 0)
@@ -194,7 +208,6 @@
                     </div>
                 </div>
 
-                <!-- Form konfirmasi pengembalian -->
                 <form action="{{ route('transaksi.update', $transaksi->id_transaksi) }}" method="POST"
                       onsubmit="return confirm('Konfirmasi pengembalian barang?\nTotal tagihan: Rp {{ number_format($totalBayarKembali, 0, '.', '.') }}\n\nLanjutkan?')">
                     @csrf
@@ -213,7 +226,6 @@
         @endif
 
         @if($transaksi->status_transaksi == 'Selesai')
-        <!-- Tombol cetak setelah selesai -->
         <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
                 <div style="font-size:13px;font-weight:700;color:#1a8050">✅ Transaksi Selesai</div>
@@ -269,7 +281,7 @@
                     <span class="nota-key">Barang</span>
                     <span class="nota-val">
                         {{ $transaksi->detailTransaksis->first()->barang->nama_barang ?? '-' }}
-                        @if($transaksi->detailTransaksis->first()->ukuran)
+                        @if($transaksi->detailTransaksis->first() && $transaksi->detailTransaksis->first()->ukuran)
                             ({{ $transaksi->detailTransaksis->first()->ukuran }})
                         @endif
                     </span>
@@ -305,11 +317,21 @@
                 @endif
                 <div class="nota-total-box">
                     <span class="nota-total-lbl">
-                        {{ $transaksi->status_transaksi == 'Selesai' ? 'TOTAL DILUNASI' : 'DIBAYAR DI MUKA' }}
+                        @if($transaksi->status_transaksi == 'Selesai')
+                            {{-- 
+                                "TOTAL DILUNASI" = apa yang dibayar saat pengembalian.
+                                Ini adalah sisa_tagihan asli (sebelum di-set ke 0) + denda.
+                                Sisa asli = total_biaya - jumlah_dp.
+                                Variabel $totalDibayarSaatKembali sudah dihitung di atas.
+                            --}}
+                            TOTAL DILUNASI
+                        @else
+                            DIBAYAR DI MUKA
+                        @endif
                     </span>
                     <span class="nota-total-val">
                         @if($transaksi->status_transaksi == 'Selesai')
-                            Rp {{ number_format(($transaksi->sisa_tagihan_dilunasi ?? 0) + $transaksi->total_denda, 0, ',', '.') }}
+                            Rp {{ number_format($totalDibayarSaatKembali, 0, ',', '.') }}
                         @else
                             Rp {{ number_format($transaksi->jumlah_dp ?? $transaksi->total_biaya, 0, ',', '.') }}
                         @endif

@@ -113,6 +113,10 @@
                     <button type="button" class="btn-outline" id="btnSimpanDraft" onclick="simpanDraft()" disabled>
                         💾 Simpan Draft
                     </button>
+                    <button type="button" class="btn-outline" id="btnPreviewNota" onclick="previewNota()" disabled
+                            title="Lihat tampilan nota sebelum menyimpan">
+                        👁 Preview Nota
+                    </button>
                     <button type="button" class="btn-gold" id="btnCetakNota" disabled onclick="prosesTransaksi()">
                         ✅ Simpan & Cetak Nota
                     </button>
@@ -353,6 +357,7 @@ function updatePreview() {
     // Enable/disable tombol
     const valid = !hasError && items.length > 0 && hari > 0 && selectedBarangId;
     document.getElementById('btnCetakNota').disabled  = !valid;
+    document.getElementById('btnPreviewNota').disabled = !valid;
     document.getElementById('btnSimpanDraft').disabled = !selectedBarangId || !document.getElementById('nama_pelanggan').value;
 
     const warn = document.getElementById('stok-warning');
@@ -430,6 +435,54 @@ function simpanDraft() {
             } else { alert('Gagal menyimpan draft: ' + d.message); btn.textContent = '💾 Simpan Draft'; btn.disabled = false; }
         })
         .catch(() => { alert('Terjadi kesalahan.'); btn.textContent = '💾 Simpan Draft'; btn.disabled = false; });
+}
+
+function previewNota() {
+    const { items, hasError } = getSelectedItems();
+    if (hasError || items.length === 0) {
+        alert('Pilih ukuran dan jumlah barang terlebih dahulu!');
+        return;
+    }
+
+    const btn = document.getElementById('btnPreviewNota');
+    btn.innerHTML = '⏳ Memuat...';
+    btn.disabled = true;
+
+    // Buat form sementara di memori — kita harus pakai POST karena
+    // data items (JSON) terlalu panjang untuk dikirim via URL (GET).
+    // target="_blank" memastikan tab form transaksi tidak ikut hilang.
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route("transaksi.preview-pdf") }}';
+    form.target = '_blank';
+
+    const addField = (name, value) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    };
+
+    addField('_token', '{{ csrf_token() }}');
+    addField('id_barang', selectedBarangId);
+    addField('nama_pelanggan', document.getElementById('nama_pelanggan').value);
+    addField('no_telp', document.getElementById('no_telp').value);
+    addField('alamat', document.getElementById('alamat').value);
+    addField('tgl_sewa', document.getElementById('tgl_sewa').value);
+    addField('tgl_jatuh_tempo', document.getElementById('tgl_jatuh_tempo').value);
+    addField('items', JSON.stringify(items));
+    addField('metode_bayar', document.getElementById('metode_bayar').value);
+    addField('jumlah_dp', document.getElementById('jumlah_dp').value || 0);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    setTimeout(() => {
+        btn.innerHTML = '👁 Preview Nota';
+        btn.disabled = false;
+    }, 1500);
 }
 
 // ─────────────────────────────────────────────
