@@ -11,6 +11,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
+            // Karyawan tidak punya akses ke dashboard, redirect ke POS
+        if ((session('user')['role'] ?? '') === 'Karyawan') {
+            return redirect()->route('transaksi.index');
+        }
         $totalBarang = Barang::count();
         $barangTersedia = Barang::where('status_barang', 'Tersedia')->count();
         $barangDisewa = Barang::where('status_barang', 'Disewa')->count();

@@ -16,9 +16,12 @@ class GuestSession
     public function handle(Request $request, Closure $next)
     {
         if (session()->has('user')) {
+            $role = session('user')['role'] ?? 'Owner';
+            if ($role === 'Karyawan') {
+                return redirect()->route('transaksi.index');
+            }
             return redirect()->route('dashboard');
         }
-
         return $next($request);
     }
 }

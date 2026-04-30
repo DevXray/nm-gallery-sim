@@ -466,6 +466,11 @@ table.report-tbl { width: 100%; border-collapse: collapse; }
 </head>
 <body>
 
+<body>
+  <div 
+  id="spa-bar" style="position:fixed;top:0;left:0;height:2.5px;background:var(--gold);width:0%;z-index:9999;opacity:0;pointer-events:none">
+  </div>
+
 @php
     $userRole      = session('user')['role'] ?? null;
     $userName      = session('user')['nama_lengkap'] ?? 'User';
@@ -590,7 +595,116 @@ table.report-tbl { width: 100%; border-collapse: collapse; }
     </div>
 </div>
 
-<script>
+  <script>
+
+/* ── Guard: hanya inisialisasi sekali ── */
+if (!window.__spaReady) {
+  window.__spaReady = true;
+
+  const bar = document.getElementById('spa-bar');
+  let barTimer;
+
+  function barStart() {
+    clearTimeout(barTimer);
+    bar.style.transition = 'width .6s ease';
+    bar.style.opacity    = '1';
+    bar.style.width      = '40%';
+  }
+  function barDone() {
+    bar.style.transition = 'width .15s ease';
+    bar.style.width      = '100%';
+    barTimer = setTimeout(() => {
+      bar.style.transition = 'opacity .3s ease';
+      bar.style.opacity    = '0';
+      setTimeout(() => { bar.style.width = '0%'; }, 350);
+    }, 200);
+  }
+
+  function reExecScripts(container) {
+    container.querySelectorAll('script').forEach(old => {
+      const s = document.createElement('script');
+      [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
+      s.textContent = old.textContent;
+      old.parentNode.replaceChild(s, old);
+    });
+  }
+
+  function syncNav(url) {
+    const path = new URL(url).pathname.replace(/\/$/, '') || '/';
+    document.querySelectorAll('a.nav-item').forEach(link => {
+      const lp = new URL(link.href, location.origin).pathname.replace(/\/$/, '') || '/';
+      link.classList.toggle('active', path === lp || (lp !== '/' && path.startsWith(lp)));
+    });
+  }
+
+  async function go(url, push = true) {
+    barStart();
+    const contentEl = document.querySelector('.content');
+    try {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { 'X-SPA': '1', 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!res.ok || !res.headers.get('content-type')?.includes('text/html'))
+        throw new Error('bad');
+
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const newContent = doc.querySelector('.content');
+      if (!newContent) throw new Error('no-content');
+
+      contentEl.style.transition = 'opacity .1s ease';
+      contentEl.style.opacity    = '0';
+      await new Promise(r => setTimeout(r, 80));
+
+      contentEl.innerHTML = newContent.innerHTML;
+
+      document.title = doc.title;
+      const nc = doc.querySelector('.tb-breadcrumb .cur');
+      const oc = document.querySelector('.tb-breadcrumb .cur');
+      if (nc && oc) oc.textContent = nc.textContent;
+
+      syncNav(url);
+      if (push) history.pushState({ spa: url }, doc.title, url);
+
+      reExecScripts(contentEl);
+
+      /* Hanya ambil script dari @stack('scripts') di body — 
+         BUKAN semua body script (agar SPA router tidak double) */
+      doc.querySelectorAll('body > script[data-spa-page]').forEach(old => {
+        const s = document.createElement('script');
+        [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
+        s.textContent = old.textContent;
+        document.body.appendChild(s);
+      });
+
+      contentEl.scrollTop    = 0;
+      contentEl.style.opacity = '1';
+      barDone();
+    } catch (_) {
+      barDone();
+      window.location.href = url;
+    }
+  }
+
+  document.addEventListener('click', e => {
+    const link = e.target.closest('a.nav-item');
+    if (!link) return;
+    const href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript')) return;
+    const url = new URL(href, location.origin);
+    if (url.origin !== location.origin) return;
+    e.preventDefault();
+    if (url.pathname === location.pathname) return;
+    go(url.href);
+  });
+
+  window.addEventListener('popstate', e => {
+    go(e.state?.spa || location.href, false);
+  });
+
+  history.replaceState({ spa: location.href }, document.title, location.href);
+}
+
 function showAccessDenied(pageName, requiredRole) {
     document.getElementById('accessModalMsg').innerHTML =
         `Anda tidak dapat mengakses <strong>${pageName}</strong>.<br><br>Halaman ini hanya untuk <strong>${requiredRole}</strong>.`;
