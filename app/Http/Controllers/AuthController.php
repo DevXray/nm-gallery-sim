@@ -30,8 +30,6 @@ class AuthController extends Controller
                 'role'         => $user->role,
             ]]);
 
-            // Karyawan langsung ke halaman transaksi (POS),
-            // Owner tetap ke dashboard seperti biasa.
             if ($user->role === 'Karyawan') {
                 return redirect()->route('transaksi.index');
             }
