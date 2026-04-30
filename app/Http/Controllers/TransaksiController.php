@@ -20,23 +20,46 @@ class TransaksiController extends Controller
     {
         return $this->create();
     }
-
+ 
     public function create()
     {
-        $barangs = Barang::where('status_barang', 'Tersedia')->get();
+        // Barang yang tersedia untuk disewa (untuk katalog POS)
+        $barangs    = Barang::where('status_barang', 'Tersedia')->get();
         $pelanggans = Pelanggan::all();
-
+ 
+        // Transaksi yang sedang berjalan (untuk tab Pengembalian)
+        // Kita load relasi yang dibutuhkan agar tidak ada N+1 query di view.
+        $transaksiAktif = \App\Models\Transaksi::with(['pelanggan', 'detailTransaksis.barang'])
+            ->where('status_transaksi', 'Diproses')
+            ->orderBy('tgl_jatuh_tempo', 'asc') // Urutkan dari yang paling mendekati jatuh tempo
+            ->get();
+ 
+        // Baca tarif denda dari file konfigurasi
+        $tarifFile    = storage_path('app/tarif.json');
+        $dendaPerHari = 50000; // default fallback
+        if (file_exists($tarifFile)) {
+            $tarif = json_decode(file_get_contents($tarifFile), true);
+            $dendaPerHari = $tarif['denda'] ?? 50000;
+        }
+ 
         $selectedPelanggan = null;
         if (request()->has('pelanggan')) {
             $selectedPelanggan = Pelanggan::find(request()->get('pelanggan'));
         }
-
+ 
         $selectedBarang = null;
         if (request()->has('barang')) {
             $selectedBarang = Barang::find(request()->get('barang'));
         }
-
-        return view('transaksi.index', compact('barangs', 'pelanggans', 'selectedPelanggan', 'selectedBarang'));
+ 
+        return view('transaksi.index', compact(
+            'barangs',
+            'pelanggans',
+            'selectedPelanggan',
+            'selectedBarang',
+            'transaksiAktif',
+            'dendaPerHari'
+        ));
     }
 
     // =====================================================================

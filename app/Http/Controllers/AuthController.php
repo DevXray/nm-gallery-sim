@@ -24,11 +24,18 @@ class AuthController extends Controller
 
         if ($user && Hash::check($request->password, $user->password)) {
             session(['user' => [
-                'id_user' => $user->id_user,
+                'id_user'      => $user->id_user,
                 'nama_lengkap' => $user->nama_lengkap,
-                'username' => $user->username,
-                'role' => $user->role,
+                'username'     => $user->username,
+                'role'         => $user->role,
             ]]);
+
+            // Karyawan langsung ke halaman transaksi (POS),
+            // Owner tetap ke dashboard seperti biasa.
+            if ($user->role === 'Karyawan') {
+                return redirect()->route('transaksi.index');
+            }
+
             return redirect()->route('dashboard');
         }
 
