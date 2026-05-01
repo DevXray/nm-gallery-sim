@@ -622,12 +622,13 @@ if (!window.__spaReady) {
 
   function reExecScripts(container) {
     container.querySelectorAll('script').forEach(old => {
-      const s = document.createElement('script');
-      [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
-      s.textContent = old.textContent;
-      old.parentNode.replaceChild(s, old);
+        const s = document.createElement('script');
+        [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
+        // Wrap dalam IIFE agar const/let tidak bentrok dengan deklarasi sebelumnya
+        s.textContent = '(function(){\n' + old.textContent + '\n})();';
+        old.parentNode.replaceChild(s, old);
     });
-  }
+}
 
   function syncNav(url) {
     const path = new URL(url).pathname.replace(/\/$/, '') || '/';
