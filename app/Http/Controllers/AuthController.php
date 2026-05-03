@@ -30,11 +30,13 @@ class AuthController extends Controller
                 'role'         => $user->role,
             ]]);
 
+            // Karyawan → langsung ke POS Transaksi
             if ($user->role === 'Karyawan') {
                 return redirect()->route('transaksi.index');
             }
 
-            return redirect()->route('dashboard');
+            // Owner → langsung ke Laporan Keuangan (dashboard dihapus)
+            return redirect()->route('laporan');
         }
 
         return back()->withErrors(['message' => 'Username atau password salah!']);

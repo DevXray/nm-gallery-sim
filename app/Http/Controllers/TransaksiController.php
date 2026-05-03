@@ -28,10 +28,9 @@ class TransaksiController extends Controller
         $pelanggans = Pelanggan::all();
  
         // Transaksi yang sedang berjalan (untuk tab Pengembalian)
-        // Kita load relasi yang dibutuhkan agar tidak ada N+1 query di view.
         $transaksiAktif = \App\Models\Transaksi::with(['pelanggan', 'detailTransaksis.barang'])
             ->where('status_transaksi', 'Diproses')
-            ->orderBy('tgl_jatuh_tempo', 'asc') // Urutkan dari yang paling mendekati jatuh tempo
+            ->orderBy('tgl_jatuh_tempo', 'asc')
             ->get();
  
         // Baca tarif denda dari file konfigurasi
@@ -90,67 +89,121 @@ class TransaksiController extends Controller
             $barang = Barang::findOrFail($request->id_barang);
 
             // Hitung durasi dalam hari (minimal 1 hari)
-            $tglSewa   = Carbon::parse($request->tgl_sewa)->startOfDay();
+            $tglSewa    = Carbon::parse($request->tgl_sewa)->startOfDay();
             $tglKembali = Carbon::parse($request->tgl_jatuh_tempo)->startOfDay();
-            $durasi    = max(1, $tglSewa->diffInDays($tglKembali));
+            $durasi     = max(1, $tglSewa->diffInDays($tglKembali));
 
-            $totalBiaya = $barang->harga_sewa * $durasi;
+            // Decode items dari form (array ukuran + jumlah yang dipilih user)
+            $items = json_decode($request->items, true) ?? [];
+
+            // ------------------------------------------------------------------
+            // PERBAIKAN: Hitung total biaya dari items yang sesungguhnya,
+            // bukan hanya dari harga barang dikalikan durasi secara flat.
+            // Ini memastikan kalau ada multi-ukuran, sub_total per item akurat.
+            // ------------------------------------------------------------------
+            $totalBiaya = 0;
+            if (!empty($items)) {
+                foreach ($items as $item) {
+                    $totalBiaya += ($item['harga'] ?? $barang->harga_sewa) * ($item['jumlah'] ?? 1) * $durasi;
+                }
+            } else {
+                // Fallback jika tidak ada items (transaksi sederhana tanpa pilih ukuran)
+                $totalBiaya = $barang->harga_sewa * $durasi;
+            }
 
             // Hitung DP dan sisa tagihan
-            $metodeBayar  = $request->metode_bayar;
-            $jumlahDp     = 0;
-            $sisaTagihan  = 0;
+            $metodeBayar = $request->metode_bayar;
+            $jumlahDp    = 0;
+            $sisaTagihan = 0;
 
             if ($metodeBayar === 'DP') {
-                // DP = 50% dari total biaya (atau bisa diinput manual)
                 $jumlahDp    = $request->jumlah_dp ?? ($totalBiaya * 0.5);
                 $sisaTagihan = $totalBiaya - $jumlahDp;
             } else {
-                // Lunas = tidak ada sisa
                 $jumlahDp    = $totalBiaya;
                 $sisaTagihan = 0;
             }
 
-            // Buat transaksi
+            // Buat record transaksi utama
             $transaksi = Transaksi::create([
-                'id_pelanggan'    => $pelanggan->id_pelanggan,
-                'id_user'         => session('user')['id_user'],
-                'tgl_sewa'        => $request->tgl_sewa,
-                'tgl_jatuh_tempo' => $request->tgl_jatuh_tempo,
-                'total_biaya'     => $totalBiaya,
-                'total_denda'     => 0,
+                'id_pelanggan'     => $pelanggan->id_pelanggan,
+                'id_user'          => session('user')['id_user'],
+                'tgl_sewa'         => $request->tgl_sewa,
+                'tgl_jatuh_tempo'  => $request->tgl_jatuh_tempo,
+                'total_biaya'      => $totalBiaya,
+                'total_denda'      => 0,
                 'status_transaksi' => 'Diproses',
-                'metode_bayar'    => $metodeBayar,
-                'jumlah_dp'       => $jumlahDp,
-                'sisa_tagihan'    => $sisaTagihan,
+                'metode_bayar'     => $metodeBayar,
+                'jumlah_dp'        => $jumlahDp,
+                'sisa_tagihan'     => $sisaTagihan,
             ]);
 
-            // Ambil items dari request (JSON dari form)
-            $items = json_decode($request->items, true) ?? [];
-
+            // ------------------------------------------------------------------
+            // FIX 2 — SIMPAN DETAIL DAN KURANGI STOK PER UKURAN
+            //
+            // Sebelumnya: loop detail hanya membuat record tapi stok tidak
+            // dikurangi di sini. Pengurangan stok justru dilakukan dengan
+            // hardcode $barang->update(['status_barang' => 'Disewa']) di bawah
+            // loop, yang menyebabkan seluruh barang terkunci padahal stok
+            // ukuran lain masih ada.
+            //
+            // Sekarang: setiap item memanggil kurangiStok($ukuran, $jumlah).
+            // Method itu (dari Barang.php yang sudah diperbaiki) akan mengurangi
+            // stok di JSON, lalu memanggil syncStatusFromStok() yang secara
+            // cerdas memutuskan apakah status perlu berubah berdasarkan TOTAL
+            // sisa stok semua ukuran — bukan hanya ukuran yang baru disewa.
+            // ------------------------------------------------------------------
             if (!empty($items)) {
                 foreach ($items as $item) {
+                    $ukuran   = $item['size']   ?? null;
+                    $kuantitas = $item['jumlah'] ?? 1;
+                    $harga    = $item['harga']   ?? $barang->harga_sewa;
+
+                    // Buat record detail transaksi untuk ukuran ini
                     DetailTransaksi::create([
                         'id_transaksi' => $transaksi->id_transaksi,
-                        'id_barang'    => $request->id_barang,
-                        'ukuran'       => $item['size'] ?? null,
-                        'kuantitas'    => $item['jumlah'] ?? 1,
-                        'sub_total'    => ($item['harga'] ?? $barang->harga_sewa) * ($item['jumlah'] ?? 1) * $durasi,
+                        'id_barang'    => $barang->id_barang, // pakai dari model, bukan request langsung
+                        'ukuran'       => $ukuran,
+                        'kuantitas'    => $kuantitas,
+                        'sub_total'    => $harga * $kuantitas * $durasi,
                     ]);
+
+                    // Kurangi stok dan biarkan syncStatusFromStok() memutuskan
+                    // apakah status_barang perlu diubah. Jika masih ada ukuran
+                    // lain yang tersedia, status tetap 'Tersedia'.
+                    if ($ukuran) {
+                        $berhasil = $barang->kurangiStok($ukuran, $kuantitas);
+
+                        // Jika stok tidak cukup, batalkan seluruh transaksi
+                        if (!$berhasil) {
+                            DB::rollBack();
+                            return back()->withErrors([
+                                'message' => "Stok ukuran {$ukuran} tidak mencukupi. Tersedia: " .
+                                             ($barang->getStokPerUkuranAttribute()[$ukuran] ?? 0) .
+                                             " pcs, diminta: {$kuantitas} pcs."
+                            ]);
+                        }
+                    }
                 }
             } else {
-                // Fallback jika tidak ada items array
+                // Fallback: transaksi tanpa memilih ukuran spesifik
                 DetailTransaksi::create([
                     'id_transaksi' => $transaksi->id_transaksi,
-                    'id_barang'    => $request->id_barang,
+                    'id_barang'    => $barang->id_barang,
                     'ukuran'       => null,
                     'kuantitas'    => 1,
                     'sub_total'    => $totalBiaya,
                 ]);
+
+                // Untuk barang tanpa sistem ukuran, langsung set Disewa
+                $barang->update(['status_barang' => 'Disewa']);
             }
 
-            // Update status barang menjadi Disewa
-            $barang->update(['status_barang' => 'Disewa']);
+            // ------------------------------------------------------------------
+            // DIHAPUS: Baris "$barang->update(['status_barang' => 'Disewa'])"
+            // yang dulu ada di sini adalah penyebab utama bug. Status sekarang
+            // dikelola sepenuhnya oleh kurangiStok() → syncStatusFromStok().
+            // ------------------------------------------------------------------
 
             // Hapus draft jika ada yang dimuat
             if ($request->has('draft_id') && $request->draft_id) {
@@ -176,8 +229,7 @@ class TransaksiController extends Controller
     {
         $transaksi = Transaksi::with(['pelanggan', 'detailTransaksis.barang'])->findOrFail($id);
 
-        // Hitung denda realtime dari pengaturan tarif
-        $tarif = $this->getTarif();
+        $tarif     = $this->getTarif();
         $dendaInfo = $this->hitungDenda($transaksi, $tarif);
 
         return view('transaksi.show', compact('transaksi', 'tarif', 'dendaInfo'));
@@ -196,28 +248,49 @@ class TransaksiController extends Controller
 
         DB::beginTransaction();
         try {
-            $tarif    = $this->getTarif();
+            $tarif     = $this->getTarif();
             $dendaInfo = $this->hitungDenda($transaksi, $tarif);
 
-            $tglKembali    = Carbon::now();
-            $totalDenda    = $dendaInfo['total_denda'];
-            $sisaTagihan   = $transaksi->sisa_tagihan ?? 0;
-
-            // Total yang harus dibayar saat pengembalian:
-            // = sisa tagihan DP (jika ada) + denda keterlambatan (jika ada)
+            $tglKembali        = Carbon::now();
+            $totalDenda        = $dendaInfo['total_denda'];
+            $sisaTagihan       = $transaksi->sisa_tagihan ?? 0;
             $totalBayarKembali = $sisaTagihan + $totalDenda;
 
             $transaksi->update([
-                'tgl_kembali'     => $tglKembali,
-                'total_denda'     => $totalDenda,
+                'tgl_kembali'      => $tglKembali,
+                'total_denda'      => $totalDenda,
                 'status_transaksi' => 'Selesai',
-                'sisa_tagihan'    => 0, // sudah lunas
+                'sisa_tagihan'     => 0,
             ]);
 
-            // Kembalikan status barang menjadi Tersedia
-            $detail = $transaksi->detailTransaksis->first();
-            if ($detail && $detail->barang) {
-                $detail->barang->update(['status_barang' => 'Tersedia']);
+            // ------------------------------------------------------------------
+            // FIX 3 — KEMBALIKAN STOK UNTUK SEMUA ITEM DI TRANSAKSI INI
+            //
+            // Sebelumnya: hanya mengambil detail pertama ($detailTransaksis->first())
+            // lalu langsung set status 'Tersedia' secara hardcode. Ini salah karena:
+            //   1. Kalau ada banyak item, hanya item pertama yang stoknya kembali.
+            //   2. Hardcode 'Tersedia' tidak memperhitungkan transaksi lain yang
+            //      mungkin masih menyewa ukuran yang berbeda dari barang yang sama.
+            //
+            // Sekarang: kita loop SEMUA detail, panggil kembalikanStok() per item.
+            // Method itu menambah stok di JSON dan memanggil syncStatusFromStok()
+            // — status baru benar-benar 'Tersedia' hanya jika total stok > 0.
+            // ------------------------------------------------------------------
+            foreach ($transaksi->detailTransaksis as $detail) {
+                $barang = $detail->barang;
+
+                // Guard: lewati jika relasi barang tidak ditemukan (data rusak)
+                if (!$barang) {
+                    continue;
+                }
+
+                if ($detail->ukuran) {
+                    // Barang dengan sistem ukuran → kembalikan via method yang cerdas
+                    $barang->kembalikanStok($detail->ukuran, $detail->kuantitas);
+                } else {
+                    // Barang tanpa ukuran (fallback) → langsung set Tersedia
+                    $barang->update(['status_barang' => 'Tersedia']);
+                }
             }
 
             DB::commit();
@@ -230,7 +303,6 @@ class TransaksiController extends Controller
                 $pesan .= ' Sisa DP dilunasi: Rp ' . number_format($sisaTagihan, 0, ',', '.');
             }
 
-            // Kirim WhatsApp jika pengaturan aktif
             $this->sendWhatsAppNotification($transaksi->fresh()->load('pelanggan'), $totalDenda, $sisaTagihan);
 
             return redirect()
@@ -244,7 +316,7 @@ class TransaksiController extends Controller
     }
 
     // =====================================================================
-    // CETAK PDF — E-NOTA SEWA (dipanggil saat transaksi baru)
+    // CETAK PDF — E-NOTA SEWA
     // =====================================================================
     public function printPdf($id)
     {
@@ -259,7 +331,7 @@ class TransaksiController extends Controller
     }
 
     // =====================================================================
-    // CETAK PDF — E-NOTA PENGEMBALIAN (dipanggil setelah return selesai)
+    // CETAK PDF — E-NOTA PENGEMBALIAN
     // =====================================================================
     public function printReturnPdf($id)
     {
@@ -269,7 +341,7 @@ class TransaksiController extends Controller
             abort(403, 'Pengembalian belum diproses.');
         }
 
-        $tarif    = $this->getTarif();
+        $tarif     = $this->getTarif();
         $dendaInfo = $this->hitungDenda($transaksi, $tarif);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('transaksi.pdf_kembali', [
@@ -282,7 +354,7 @@ class TransaksiController extends Controller
     }
 
     // =====================================================================
-    // PREVIEW PDF SEBELUM SIMPAN (dari form baru)
+    // PREVIEW PDF SEBELUM SIMPAN
     // =====================================================================
     public function previewPdf(Request $request)
     {
@@ -292,8 +364,8 @@ class TransaksiController extends Controller
         $tglJatuh = Carbon::parse($request->tgl_jatuh_tempo);
         $durasi   = max(1, $tglSewa->diffInDays($tglJatuh));
 
-        $items      = json_decode($request->items ?? '[]', true);
-        $totalBiaya = 0;
+        $items       = json_decode($request->items ?? '[]', true);
+        $totalBiaya  = 0;
         $detailItems = [];
 
         foreach ($items as $item) {
@@ -343,9 +415,9 @@ class TransaksiController extends Controller
     public function saveDraft(Request $request)
     {
         $request->validate([
-            'id_barang'       => 'required|exists:barang,id_barang',
-            'nama_pelanggan'  => 'required',
-            'no_telp'         => 'required',
+            'id_barang'      => 'required|exists:barang,id_barang',
+            'nama_pelanggan' => 'required',
+            'no_telp'        => 'required',
         ]);
 
         try {
@@ -380,8 +452,8 @@ class TransaksiController extends Controller
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Draft berhasil disimpan.',
+                'success'  => true,
+                'message'  => 'Draft berhasil disimpan.',
                 'draft_id' => $draft->id_draft,
             ]);
         } catch (\Exception $e) {
@@ -390,7 +462,7 @@ class TransaksiController extends Controller
     }
 
     // =====================================================================
-    // AMBIL SEMUA DRAFT MILIK USER (untuk popup daftar draft)
+    // AMBIL SEMUA DRAFT MILIK USER
     // =====================================================================
     public function getDrafts()
     {
@@ -400,19 +472,19 @@ class TransaksiController extends Controller
             ->get()
             ->map(function ($d) {
                 return [
-                    'id_draft'        => $d->id_draft,
-                    'nama_pelanggan'  => $d->nama_pelanggan,
-                    'no_telp'         => $d->no_telp,
-                    'barang'          => $d->barang->nama_barang ?? '-',
-                    'total_biaya'     => $d->total_biaya,
-                    'metode_bayar'    => $d->metode_bayar,
-                    'tgl_sewa'        => $d->tgl_sewa ? $d->tgl_sewa->format('d/m/Y H:i') : '-',
-                    'tgl_jatuh'       => $d->tgl_jatuh_tempo ? $d->tgl_jatuh_tempo->format('d/m/Y H:i') : '-',
-                    'id_barang'       => $d->id_barang,
-                    'items'           => $d->ukuran_dipilih,
-                    'alamat'          => $d->alamat,
-                    'created_at'      => $d->created_at->format('d/m/Y H:i'),
-                    'catatan'         => $d->catatan,
+                    'id_draft'       => $d->id_draft,
+                    'nama_pelanggan' => $d->nama_pelanggan,
+                    'no_telp'        => $d->no_telp,
+                    'barang'         => $d->barang->nama_barang ?? '-',
+                    'total_biaya'    => $d->total_biaya,
+                    'metode_bayar'   => $d->metode_bayar,
+                    'tgl_sewa'       => $d->tgl_sewa ? $d->tgl_sewa->format('d/m/Y H:i') : '-',
+                    'tgl_jatuh'      => $d->tgl_jatuh_tempo ? $d->tgl_jatuh_tempo->format('d/m/Y H:i') : '-',
+                    'id_barang'      => $d->id_barang,
+                    'items'          => $d->ukuran_dipilih,
+                    'alamat'         => $d->alamat,
+                    'created_at'     => $d->created_at->format('d/m/Y H:i'),
+                    'catatan'        => $d->catatan,
                 ];
             });
 
@@ -438,13 +510,18 @@ class TransaksiController extends Controller
     // =====================================================================
     public function destroy($id)
     {
-        $transaksi = Transaksi::findOrFail($id);
+        $transaksi = Transaksi::with(['detailTransaksis.barang'])->findOrFail($id);
 
-        // Kembalikan status barang jika masih Diproses
+        // Kembalikan stok semua item jika transaksi masih berjalan
         if ($transaksi->status_transaksi === 'Diproses') {
-            $detail = $transaksi->detailTransaksis()->with('barang')->first();
-            if ($detail && $detail->barang) {
-                $detail->barang->update(['status_barang' => 'Tersedia']);
+            foreach ($transaksi->detailTransaksis as $detail) {
+                if ($detail->barang) {
+                    if ($detail->ukuran) {
+                        $detail->barang->kembalikanStok($detail->ukuran, $detail->kuantitas);
+                    } else {
+                        $detail->barang->update(['status_barang' => 'Tersedia']);
+                    }
+                }
             }
         }
 
@@ -468,10 +545,10 @@ class TransaksiController extends Controller
             return json_decode(file_get_contents($tarifFile), true) ?? [];
         }
         return [
-            'tarif_dasar'  => 150000,
+            'tarif_dasar'   => 150000,
             'tarif_fullset' => 650000,
-            'jaminan'      => 200000,
-            'denda'        => 50000,
+            'jaminan'       => 200000,
+            'denda'         => 50000,
         ];
     }
 
@@ -480,14 +557,13 @@ class TransaksiController extends Controller
     // =====================================================================
     private function hitungDenda(Transaksi $transaksi, array $tarif): array
     {
-        $now             = Carbon::now()->startOfDay();
-        $jatuhTempo      = Carbon::parse($transaksi->tgl_jatuh_tempo)->startOfDay();
-        $terlambat       = $now->gt($jatuhTempo);
-        $hariTelat       = $terlambat ? $jatuhTempo->diffInDays($now) : 0;
-        $dendaPerHari    = $tarif['denda'] ?? 50000;
-        $totalDenda      = $hariTelat * $dendaPerHari;
+        $now          = Carbon::now()->startOfDay();
+        $jatuhTempo   = Carbon::parse($transaksi->tgl_jatuh_tempo)->startOfDay();
+        $terlambat    = $now->gt($jatuhTempo);
+        $hariTelat    = $terlambat ? $jatuhTempo->diffInDays($now) : 0;
+        $dendaPerHari = $tarif['denda'] ?? 50000;
+        $totalDenda   = $hariTelat * $dendaPerHari;
 
-        // Jika sudah dikembalikan, hitung dari tgl_kembali actual
         if ($transaksi->tgl_kembali) {
             $tglKembali  = Carbon::parse($transaksi->tgl_kembali)->startOfDay();
             $terlambat   = $tglKembali->gt($jatuhTempo);
@@ -496,10 +572,10 @@ class TransaksiController extends Controller
         }
 
         return [
-            'terlambat'     => $terlambat,
-            'hari_telat'    => $hariTelat,
+            'terlambat'      => $terlambat,
+            'hari_telat'     => $hariTelat,
             'denda_per_hari' => $dendaPerHari,
-            'total_denda'   => $totalDenda,
+            'total_denda'    => $totalDenda,
         ];
     }
 
@@ -508,22 +584,12 @@ class TransaksiController extends Controller
     // =====================================================================
     private function sendWhatsAppNotification(Transaksi $transaksi, float $denda, float $sisa): void
     {
-        // Cek apakah fitur WA aktif di pengaturan
-        // Untuk saat ini menggunakan flag file sederhana
-        // Nanti bisa diganti dengan database setting
         $settingFile = storage_path('app/wa_setting.json');
         if (!file_exists($settingFile)) return;
 
         $setting = json_decode(file_get_contents($settingFile), true);
         if (empty($setting['kirim_enota_otomatis'])) return;
 
-        // Implementasi via Fonnte API (uncomment jika API key tersedia)
-        // $apiKey = env('FONNTE_API_KEY');
-        // $noTelp = $transaksi->pelanggan->no_telp;
-        // $pesan  = "Terima kasih *{$transaksi->pelanggan->nama_pelanggan}*, ...";
-        // Http::withToken($apiKey)->post('https://api.fonnte.com/send', [...]);
-
-        // Untuk sekarang: simpan flag agar view bisa tampilkan tombol WA
         session(['wa_send_trx_id' => $transaksi->id_transaksi]);
     }
 }
