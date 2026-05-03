@@ -872,8 +872,7 @@ body.mob-sidebar-open .sidebar-backdrop {
         Inventaris &amp; Stok
         <span class="nav-pill info">{{ $totalBarang }}</span>
     </a>
-
-    @if($userRole === 'Karyawan')
+    
     <a href="{{ route('transaksi.index') }}"
        class="nav-item {{ request()->routeIs('transaksi.*') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor">
@@ -881,7 +880,6 @@ body.mob-sidebar-open .sidebar-backdrop {
         </svg>
         Transaksi &amp; E-Nota
     </a>
-    @endif
 
     @if($userRole === 'Owner')
     <a href="{{ route('laporan') }}"
@@ -904,6 +902,16 @@ body.mob-sidebar-open .sidebar-backdrop {
     </a>
 
     @if($userRole === 'Owner')
+    {{-- ← TAMBAHKAN BLOK INI ← --}}
+    <a href="{{ route('pengguna.index') }}"
+       class="nav-item {{ request()->routeIs('pengguna.*') ? 'active' : '' }}">
+        <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+        </svg>
+        Kelola User
+    </a>
+
+    {{-- ← AKHIR TAMBAHAN ← --}}
     <a href="{{ route('pengaturan') }}"
        class="nav-item {{ request()->routeIs('pengaturan') ? 'active' : '' }}">
         <svg class="n-ico" viewBox="0 0 20 20" fill="currentColor">
