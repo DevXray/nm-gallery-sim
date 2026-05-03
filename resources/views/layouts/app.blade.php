@@ -1131,13 +1131,52 @@ if (!window.__spaReady) {
     }
 
     function reExecScripts(container) {
-        container.querySelectorAll('script').forEach(old => {
+        const scripts = [...container.querySelectorAll('script')];
+
+        const externalScripts = scripts.filter(s => s.src);
+        const inlineScripts   = scripts.filter(s => !s.src);
+
+        if (externalScripts.length === 0) {
+            // Tidak ada CDN, langsung jalankan semua script inline
+            inlineScripts.forEach(execInlineScript);
+            return;
+        }
+
+        let loadedCount = 0;
+        externalScripts.forEach(old => {
             const s = document.createElement('script');
             [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
-            // Bungkus dalam IIFE agar const/let tidak konflik dengan deklarasi lain
-            s.textContent = '(function(){\n' + old.textContent + '\n})();';
+
+            s.onload = s.onerror = () => {
+                loadedCount++;
+                if (loadedCount === externalScripts.length) {
+                    // Semua CDN sudah siap, baru jalankan script inline
+                    inlineScripts.forEach(execInlineScript);
+                }
+            };
+
             old.parentNode.replaceChild(s, old);
         });
+    }
+
+    function execInlineScript(old) {
+    const text = old.textContent;
+    const s = document.createElement('script');
+
+    const fnPattern = /^(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/gm;
+    const fnNames = new Set();
+    let match;
+    while ((match = fnPattern.exec(text)) !== null) {
+        fnNames.add(match[1]);
+    }
+
+    const exposures = [...fnNames]
+        .map(n => `try{ if(typeof ${n}==='function') window.${n}=${n}; }catch(e){}`)
+        .join('\n');
+
+    s.textContent = `(function(){\n${text}\n\n${exposures}\n})();`;
+
+    old.parentNode.replaceChild(s, old);
     }
 
     function syncNav(url) {
