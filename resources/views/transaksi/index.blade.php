@@ -321,6 +321,41 @@
 .btn-km-konfirm:hover { background:#15704a; box-shadow:0 3px 12px rgba(26,128,80,.25); }
 .btn-km-cancel { width:100%; padding:9px; background:transparent; border:1px solid var(--pos-border2); border-radius:var(--pos-r2); color:var(--pos-muted); font-size:12px; cursor:pointer; transition:.12s; font-family:inherit; }
 .btn-km-cancel:hover { border-color:var(--pos-red); color:var(--pos-red); }
+
+/* ── Transaksi / POS Responsive ── */
+@media (max-width: 900px) {
+  .pos-page { height: auto !important; overflow: visible !important; }
+  .pos-split { flex-direction: column; overflow: visible !important; }
+  .pos-katalog { overflow: visible !important; min-height: 0; }
+  .pos-grid { max-height: 55vh; overflow-y: auto; }
+  .pos-cart {
+    width: 100% !important;
+    max-height: 460px;
+    border-left: none;
+    border-top: 2px solid var(--pos-gold-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .pos-page { margin: -14px !important; }
+  .pos-tabbar { padding: 0 10px; gap: 0; overflow-x: auto; }
+  .pos-tab { padding: 0 12px; font-size: 12px; flex-shrink: 0; }
+
+  /* Catalog grid: 2 columns on mobile */
+  .pos-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    padding: 10px;
+    gap: 8px;
+  }
+  .pos-card-img { height: 80px; }
+
+  /* Cart full width */
+  .pos-cart { width: 100% !important; }
+
+  /* Pengembalian tab: single column grid */
+  .kembali-grid { grid-template-columns: 1fr !important; }
+  .trx-info-grid { grid-template-columns: 1fr 1fr; }
+}
 </style>
 
 <div class="pos-page">
@@ -328,7 +363,7 @@
   {{-- TAB BAR --}}
   <div class="pos-tabbar">
     <div class="pos-tab active" id="tabPOS" onclick="switchTab('pos')">
-      🧾 Transaksi Baru
+      <i class="bi bi-receipt"></i> Transaksi Baru
     </div>
     <div class="pos-tab" id="tabKembali" onclick="switchTab('kembali')">
       ↩️ Pengembalian
@@ -358,13 +393,13 @@
       <div class="pos-cart">
         <div class="pos-cart-head">
           <div class="pos-cart-title">
-            🛍 Pesanan
+            <i class="bi bi-bag"></i> Pesanan
             <div class="pos-cart-count" id="posCartCount">0</div>
           </div>
         </div>
         <div class="pos-cart-body" id="posCartBody">
           <div class="pos-cart-empty">
-            <div class="pos-cart-empty-ico">🛒</div>
+            <div class="pos-cart-empty-ico"><i class="bi bi-cart3" style="font-size:32px;opacity:.35;color:var(--pos-muted)"></i></div>
             <div class="pos-cart-empty-txt">Pilih baju dari katalog<br>untuk mulai transaksi</div>
           </div>
         </div>
@@ -375,7 +410,7 @@
             <div class="pos-total-val" id="posTotalVal">Rp 0</div>
           </div>
           <button class="pos-btn-pay" id="posBtnPay" disabled onclick="posOpenPayModal()">
-            🧾 Bayar Sekarang
+            <i class="bi bi-receipt-cutoff"></i> Bayar Sekarang
           </button>
           <button class="pos-btn-reset" onclick="posClearCart()">Batal / Reset</button>
         </div>
@@ -399,7 +434,7 @@
 
       @if($transaksiAktif->isEmpty())
         <div class="kembali-empty">
-          <div class="kembali-empty-ico">✅</div>
+          <div class="kembali-empty-ico"><i class="bi bi-check-circle" style="font-size:32px;opacity:.35;color:#1a8050"></i></div>
           <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:#0a0a0a">Semua baju sudah kembali</div>
           <div style="font-size:12px">Tidak ada transaksi aktif saat ini</div>
         </div>
@@ -420,9 +455,9 @@
             <div class="trx-card-head">
               <div class="trx-no">#TRX-{{ str_pad($trx->id_transaksi, 4, '0', STR_PAD_LEFT) }}</div>
               @if($terlambat)
-                <span class="trx-status-late">⚠️ Telat {{ $hariTelat }} hari</span>
+                <span class="trx-status-late"><i class="bi bi-exclamation-triangle-fill"></i> Telat {{ $hariTelat }} hari</span>
               @else
-                <span class="trx-status-ok">✓ Tepat waktu</span>
+                <span class="trx-status-ok"><i class="bi bi-check-circle-fill"></i> Tepat waktu</span>
               @endif
             </div>
             <div class="trx-card-body">
@@ -499,7 +534,7 @@
         <div class="sp-name" id="spName">-</div>
         <div class="sp-price" id="spPrice">-</div>
       </div>
-      <button class="sp-close" onclick="posCloseSizePicker()">✕</button>
+      <button class="sp-close" onclick="posCloseSizePicker()"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="sp-body">
       <div class="sp-lbl">Pilih Ukuran</div>
@@ -526,13 +561,13 @@
     {{-- KIRI: FORM --}}
     <div class="pay-form-col">
       <div class="pay-form-head">
-        <div class="pay-form-title">🧾 Detail Penyewaan</div>
+        <div class="pay-form-title"><i class="bi bi-receipt"></i> Detail Penyewaan</div>
         <div class="pay-form-sub">Lengkapi data sebelum konfirmasi transaksi</div>
       </div>
       <div class="pay-form-body">
 
         <div>
-          <div class="pm-sec-title">👤 Data Pelanggan</div>
+          <div class="pm-sec-title"><i class="bi bi-person"></i> Data Pelanggan</div>
           <div style="display:flex;flex-direction:column;gap:9px;margin-top:8px">
             <div class="pm-field">
               <label class="pm-label">Nama Pelanggan *</label>
@@ -552,7 +587,7 @@
         </div>
 
         <div>
-          <div class="pm-sec-title">📅 Periode Sewa</div>
+          <div class="pm-sec-title"><i class="bi bi-calendar"></i> Periode Sewa</div>
           <div style="display:flex;flex-direction:column;gap:9px;margin-top:8px">
             <div class="pm-grid2">
               <div class="pm-field">
@@ -569,7 +604,7 @@
         </div>
 
         <div>
-          <div class="pm-sec-title">💳 Metode Pembayaran</div>
+          <div class="pm-sec-title"><i class="bi bi-credit-card"></i> Metode Pembayaran</div>
           <div style="display:flex;flex-direction:column;gap:9px;margin-top:8px">
             <div class="metode-wrap">
               <div class="met-opt active" id="posOptLunas" onclick="posSetMetode('lunas')">
@@ -604,7 +639,7 @@
           <input type="hidden" name="metode_bayar"    id="fMetode">
           <input type="hidden" name="jumlah_dp"       id="fDP">
           <button type="button" class="btn-konfirm" onclick="posKonfirmasi()">
-            ✓ Konfirmasi &amp; Simpan Transaksi
+            <i class="bi bi-check-lg"></i> Konfirmasi &amp; Simpan Transaksi
           </button>
         </form>
         <button class="btn-pay-cancel" onclick="posClosePayModal()">Batal</button>
@@ -662,7 +697,7 @@
             </div>
             <div class="nota-foot">
               Terima kasih telah mempercayakan<br>
-              momen Anda kepada <strong>NM Gallery</strong> ✦
+              momen Anda kepada <strong>NM Gallery</strong> &#10022;
             </div>
           </div>
         </div>
@@ -677,7 +712,7 @@
   <div class="konfirm-modal">
     <div class="km-head">
       <div class="km-title">↩️ Konfirmasi Pengembalian</div>
-      <button class="km-close" onclick="closeKonfirmKembali()">✕</button>
+      <button class="km-close" onclick="closeKonfirmKembali()"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="km-body">
       <div class="km-info" id="kmInfo"></div>
@@ -690,7 +725,7 @@
         @csrf
         @method('PUT')
         <button type="submit" class="btn-km-konfirm">
-          ✅ Konfirmasi Pengembalian &amp; Selesai
+          <i class="bi bi-check-circle"></i> Konfirmasi Pengembalian &amp; Selesai
         </button>
       </form>
       <button class="btn-km-cancel" onclick="closeKonfirmKembali()">Batal</button>
@@ -750,7 +785,7 @@ function posRenderGrid() {
         return `<div class="pos-card${isOut?' disewa':''}" onclick="${isOut?'':'posOpenSizePicker('+b.id+')'}">
           <div class="pos-card-img">
             ${hasFoto ? `<img src="/${b.foto}" onerror="this.style.display='none'">` : ''}
-            <span style="font-size:36px${hasFoto?';display:none':''}">👘</span>
+            <span style="font-size:36px${hasFoto?';display:none':''}"><i class='bi bi-bag-heart' style='color:var(--pos-gold-dk);opacity:.5'></i></span>
             <div class="pos-badge ${isOut?'out':'ok'}">${isOut?'DISEWA':'TERSEDIA'}</div>
           </div>
           <div class="pos-card-body">
@@ -815,7 +850,7 @@ function posRenderCart() {
     document.getElementById('posBtnPay').disabled       = posCart.length === 0;
     const body = document.getElementById('posCartBody');
     if (!posCart.length) {
-        body.innerHTML = '<div class="pos-cart-empty"><div class="pos-cart-empty-ico">🛒</div><div class="pos-cart-empty-txt">Pilih baju dari katalog<br>untuk mulai transaksi</div></div>';
+        body.innerHTML = '<div class="pos-cart-empty"><div class="pos-cart-empty-ico"><i class="bi bi-cart3" style="font-size:32px;opacity:.35;color:var(--pos-muted)"></i></div><div class="pos-cart-empty-txt">Pilih baju dari katalog<br>untuk mulai transaksi</div></div>';
         return;
     }
     body.innerHTML = posCart.map((c,i) => `
@@ -830,7 +865,7 @@ function posRenderCart() {
           </div>
           <div class="pos-item-price">${posFmt(c.harga * c.qty)}</div>
         </div>
-        <button class="pos-del" onclick="posRemoveCart(${i})">✕</button>
+        <button class="pos-del" onclick="posRemoveCart(${i})"><i class="bi bi-x-lg"></i></button>
       </div>`).join('');
     posUpdateNota();
 }
@@ -973,10 +1008,10 @@ function openKonfirmKembali(trxId) {
     const alertEl = document.getElementById('kmAlert');
     if (trx.terlambat) {
         alertEl.className = 'km-alert late';
-        alertEl.innerHTML = `⚠️ Terlambat <strong>${trx.hari_telat} hari</strong> dari jatuh tempo ${trx.tgl_jatuh}. Denda: <strong>${posFmt(trx.total_denda)}</strong>`;
+        alertEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> Terlambat <strong>${trx.hari_telat} hari</strong> dari jatuh tempo ${trx.tgl_jatuh}. Denda: <strong>${posFmt(trx.total_denda)}</strong>`;
     } else {
         alertEl.className = 'km-alert ok';
-        alertEl.innerHTML = '✅ Pengembalian tepat waktu — tidak ada denda';
+        alertEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Pengembalian tepat waktu — tidak ada denda';
     }
 
     const totalEl = document.getElementById('kmTotalVal');

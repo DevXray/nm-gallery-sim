@@ -9,7 +9,7 @@
     <div class="pg-head">
         <div style="display:flex;align-items:flex-start;justify-content:space-between">
             <div>
-                <div class="pg-title">📊 Laporan Keuangan</div>
+                <div class="pg-title"><i class="bi bi-bar-chart-line"></i> Laporan Keuangan</div>
                 <div class="pg-sub">Rekap pendapatan dan penyewaan Baju Bodo</div>
             </div>
         </div>
@@ -21,7 +21,7 @@
             <div class="card-head">
                 <div>
                     <div class="card-title">
-                        📈 Pendapatan 
+                        <i class="bi bi-graph-up-arrow"></i> Pendapatan 
                         @if($filter == 'harian')
                             Per Jam
                         @elseif($filter == 'mingguan')
@@ -50,7 +50,7 @@
         <div class="card gold-top">
             <div class="card-head">
                 <div>
-                    <div class="card-title">📋 Ringkasan Periode</div>
+                    <div class="card-title"><i class="bi bi-clipboard2-data"></i> Ringkasan Periode</div>
                     <div class="card-sub">{{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</div>
                 </div>
             </div>
@@ -60,14 +60,14 @@
                         <div style="font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.6px">Total Penyewaan</div>
                         <div style="font-size:24px;font-weight:800;color:#1a1a1a;margin-top:2px;">{{ $totalTransaksiPeriode ?? 0 }}</div>
                     </div>
-                    <div style="font-size:28px">👘</div>
+                    <div style="width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center"><i class="bi bi-bag-heart" style="font-size:18px;color:var(--gold-dk)"></i></div>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(201,168,76,0.08);border-radius:10px;border:1px solid rgba(201,168,76,0.25)">
                     <div>
                         <div style="font-size:10px;color:#C9A84C;font-weight:600;text-transform:uppercase;letter-spacing:.6px">Total Pendapatan</div>
                         <div style="font-size:22px;font-weight:800;color:#C9A84C;margin-top:2px;font-family:monospace">Rp {{ number_format(($totalPendapatanPeriode ?? 0), 0, ',', '.') }}</div>
                     </div>
-                    <div style="font-size:28px">💰</div>
+                    <div style="width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center"><i class="bi bi-cash-stack" style="font-size:18px;color:var(--gold-dk)"></i></div>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(45,166,110,.05);border-radius:10px;border:1px solid rgba(45,166,110,.15)">
                     <div>
@@ -80,7 +80,7 @@
                             Rp {{ number_format($rataRata, 0, ',', '.') }}
                         </div>
                     </div>
-                    <div style="font-size:28px">📊</div>
+                    <div style="width:36px;height:36px;border-radius:8px;background:rgba(45,166,110,.08);border:1px solid rgba(45,166,110,.2);display:flex;align-items:center;justify-content:center"><i class="bi bi-activity" style="font-size:18px;color:#1a8050"></i></div>
                 </div>
             </div>
         </div>
@@ -90,24 +90,24 @@
     <div class="card gold-top" style="margin-bottom:20px">
         <div class="card-head">
             <div>
-                <div class="card-title">📋 Rincian Transaksi</div>
+                <div class="card-title"><i class="bi bi-table"></i> Rincian Transaksi</div>
                 <div class="card-sub">Filter berdasarkan periode dan tanggal</div>
             </div>
         </div>
 
         <div class="report-filter-row">
             <div class="period-toggle" id="periodToggle">
-                <div class="pt-btn {{ $filter == 'harian' ? 'active' : '' }}" data-filter="harian">⏰ Harian</div>
-                <div class="pt-btn {{ $filter == 'mingguan' ? 'active' : '' }}" data-filter="mingguan">📅 Mingguan</div>
-                <div class="pt-btn {{ $filter == 'bulanan' ? 'active' : '' }}" data-filter="bulanan">📆 Bulanan</div>
+                <div class="pt-btn {{ $filter == 'harian' ? 'active' : '' }}" data-filter="harian"><i class="bi bi-clock"></i> Harian</div>
+                <div class="pt-btn {{ $filter == 'mingguan' ? 'active' : '' }}" data-filter="mingguan"><i class="bi bi-calendar3-week"></i> Mingguan</div>
+                <div class="pt-btn {{ $filter == 'bulanan' ? 'active' : '' }}" data-filter="bulanan"><i class="bi bi-calendar3"></i> Bulanan</div>
             </div>
             <input type="date" class="date-input" id="start_date" value="{{ $startDate ?? date('Y-m-01') }}">
             <span style="font-size:12px;color:#aaa">→</span>
             <input type="date" class="date-input" id="end_date" value="{{ $endDate ?? date('Y-m-d') }}">
-            <button class="btn-gold" id="btnTerapkan">🎯 Terapkan</button>
+            <button class="btn-gold" id="btnTerapkan"><i class="bi bi-funnel-fill"></i> Terapkan</button>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-responsive">
             <table class="report-tbl">
                 <thead>
                     <tr>
@@ -144,7 +144,7 @@
                             @if($item->tgl_kembali)
                                 {{ \Carbon\Carbon::parse($item->tgl_kembali)->format('d/m/Y') }}
                             @else
-                                <span class="badge badge-out" style="font-size:9px;">⏳ Belum Kembali</span>
+                                <span class="badge badge-out" style="font-size:9px;"><i class="bi bi-hourglass-split"></i> Belum Kembali</span>
                             @endif
                         </td>
                         <td class="td-mono" style="font-size:11.5px">
@@ -157,11 +157,11 @@
                         </td>
                         <td>
                             @if($item->status_transaksi == 'Diproses')
-                                <span class="badge badge-out">🟡 Aktif</span>
+                                <span class="badge badge-out"><i class="bi bi-circle-fill" style="color:#d4900a;font-size:8px;vertical-align:2px"></i> Aktif</span>
                             @elseif($item->status_transaksi == 'Selesai')
-                                <span class="badge badge-ready" style="background:rgba(45,166,110,.1);color:#1a8050;border:1px solid rgba(45,166,110,.25);border-radius:20px;">✅ Selesai</span>
+                                <span class="badge badge-ready" style="background:rgba(45,166,110,.1);color:#1a8050;border:1px solid rgba(45,166,110,.25);border-radius:20px;"><i class="bi bi-check-circle-fill" style="color:#1a8050;font-size:10px"></i> Selesai</span>
                             @else
-                                <span class="badge badge-damaged" style="background:rgba(220,80,60,.08);color:#c04030;border:1px solid rgba(220,80,60,.2);border-radius:20px;">⚠️ Terlambat</span>
+                                <span class="badge badge-damaged" style="background:rgba(220,80,60,.08);color:#c04030;border:1px solid rgba(220,80,60,.2);border-radius:20px;"><i class="bi bi-exclamation-triangle-fill" style="font-size:10px"></i> Terlambat</span>
                             @endif
                         </td>
                         <td class="td-mono td-gold" style="font-weight:700;">Rp {{ number_format(($item->total_biaya + ($item->total_denda ?? 0)), 0, ',', '.') }}</td>
@@ -169,7 +169,7 @@
                     @empty
                     <tr>
                         <td colspan="8" style="text-align:center; padding:50px;">
-                            <div style="font-size:16px; color:#aaa;">📊 Belum ada transaksi</div>
+                            <div style="font-size:16px; color:#aaa;"><i class="bi bi-inbox"></i> Belum ada transaksi</div>
                             <div style="font-size:12px; color:#ccc; margin-top:8px;">Silakan buat transaksi terlebih dahulu</div>
                         </td>
                     </tr>
@@ -186,8 +186,8 @@
                         $totalDisplay += $item->total_biaya + ($item->total_denda ?? 0);
                     }
                 @endphp
-                📊 Total Ditampilkan: <strong style="color:#1a1a1a">{{ count($transaksis ?? []) }} transaksi</strong> &nbsp;|&nbsp; 
-                💰 Total Pendapatan: <strong style="color:#C9A84C;font-family:monospace">Rp {{ number_format($totalDisplay, 0, ',', '.') }}</strong>
+                <i class="bi bi-table"></i> Total Ditampilkan: <strong style="color:#1a1a1a">{{ count($transaksis ?? []) }} transaksi</strong> &nbsp;|&nbsp; 
+                <i class="bi bi-cash-stack"></i> Total Pendapatan: <strong style="color:#C9A84C;font-family:monospace">Rp {{ number_format($totalDisplay, 0, ',', '.') }}</strong>
             </div>
         </div>
     </div>
@@ -195,12 +195,12 @@
     <!-- Export Row -->
     <div class="export-row">
         <div class="export-text">
-            <div class="export-title">📎 Unduh Laporan</div>
+            <div class="export-title"><i class="bi bi-download"></i> Unduh Laporan</div>
             <div class="export-sub">Ekspor rekap keuangan untuk pencatatan Owner</div>
         </div>
         <div class="export-btns">
-            <button class="btn-outline" id="btnExportExcel">📊 Export Excel</button>
-            <button class="btn-gold" id="btnExportPDF">📄 Export PDF</button>
+            <button class="btn-outline" id="btnExportExcel"><i class="bi bi-file-earmark-spreadsheet"></i> Export Excel</button>
+            <button class="btn-gold" id="btnExportPDF"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
         </div>
     </div>
 
@@ -444,6 +444,21 @@ periodBtns.forEach(btn => {
     border-radius: 12px;
     margin: 0 16px 20px 16px;
 }
+/* ── Laporan responsive ── */
+@media (max-width: 768px) {
+  .report-filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .report-filter-row .period-toggle { width: 100%; }
+  .report-filter-row .date-input { width: 100%; }
+  .report-filter-row .btn-gold { width: 100%; justify-content: center; }
+  .export-row { flex-direction: column; align-items: stretch; }
+  .export-btns { display: flex; gap: 8px; }
+  .export-btns button { flex: 1; }
+}
+
 
 #pendapatanChart.ai-style-change-1 {
     width: 100%;

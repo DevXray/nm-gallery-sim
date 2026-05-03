@@ -503,6 +503,69 @@
 .ukuran-stok-num:disabled { opacity: .35; cursor: not-allowed; }
 .ukuran-stok-num:not(:disabled) { background: #fff; }
 .ukuran-stok-num:focus { border-color: var(--gold); }
+
+/* ── Barang / Inventaris Responsive ── */
+@media (max-width: 900px) {
+  /* Stack the split panel vertically on tablet */
+  .inv-split {
+    flex-direction: column !important;
+  }
+  .inv-panel {
+    width: 100% !important;
+    max-height: 340px;
+    border-top: 1px solid var(--gray-200);
+    border-right: none;
+  }
+  .inv-katalog {
+    border-right: none !important;
+    border-bottom: 1px solid var(--gray-200);
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Full-screen inventory layout */
+  .inv-page {
+    height: auto !important;
+    min-height: calc(100vh - 52px - 44px - 28px);
+    overflow: visible !important;
+    margin: -14px !important;
+  }
+  .inv-tabbar { padding: 0 12px; gap: 0; overflow-x: auto; }
+  .inv-tab    { padding: 0 14px; font-size: 12px; flex-shrink: 0; }
+
+  /* Catalog grid: 2 columns on narrow screens */
+  .inv-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    padding: 10px;
+  }
+
+  /* Stacked split view */
+  .inv-split {
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+  .inv-katalog {
+    overflow: visible !important;
+    border-right: none !important;
+    min-height: 0;
+  }
+  .inv-grid {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .inv-panel {
+    width: 100% !important;
+    max-height: none;
+    border-top: 2px solid var(--gold-md);
+  }
+
+  /* Tab 2 table-responsive */
+  .tab2-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 </style>
 
 {{-- ═══════════════════════════════════════════
@@ -513,12 +576,12 @@
     {{-- ── TAB BAR ── --}}
     <div class="inv-tabbar">
         <div class="inv-tab active" id="tabKelola" onclick="switchInvTab('kelola')">
-            📦 Kelola Stok
+            <i class="bi bi-box-seam"></i> Kelola Stok
             <div class="inv-tab-badge">{{ $totalBarang }}</div>
         </div>
         @if($isOwner)
         <div class="inv-tab" id="tabTambah" onclick="switchInvTab('tambah')">
-            ➕ Tambah Barang Baru
+            <i class="bi bi-plus-circle"></i> Tambah Barang Baru
         </div>
         @endif
     </div>
@@ -551,7 +614,7 @@
 
                 {{-- State kosong: tampil saat tidak ada item dipilih --}}
                 <div class="inv-panel-empty" id="panelEmpty">
-                    <div class="inv-panel-empty-ico">👘</div>
+                    <div class="inv-panel-empty-ico"><i class="bi bi-bag-heart" style="font-size:36px;opacity:.3;color:var(--gold-dk)"></i></div>
                     <div class="inv-panel-empty-txt">
                         Pilih barang dari katalog<br>untuk mulai mengelola stok
                     </div>
@@ -570,7 +633,7 @@
                     <div class="inv-panel-body">
 
                         {{-- Bagian 1: Stok per ukuran --}}
-                        <div class="inv-sec-title">📊 Stok per Ukuran</div>
+                        <div class="inv-sec-title"><i class="bi bi-grid-3x3-gap"></i> Stok per Ukuran</div>
                         <div id="stokRows">
                             {{-- Diisi oleh JavaScript saat barang dipilih --}}
                         </div>
@@ -582,17 +645,17 @@
                         </div>
 
                         {{-- Bagian 2: Status barang --}}
-                        <div class="inv-sec-title">🔖 Status Barang</div>
+                        <div class="inv-sec-title"><i class="bi bi-bookmark"></i> Status Barang</div>
                         <select class="status-select" id="panelStatus"
                                 onchange="updateStatusColor()">
-                            <option value="Tersedia">✅ Tersedia</option>
-                            <option value="Disewa">🟡 Sedang Disewa</option>
-                            <option value="Laundry">🔵 Laundry</option>
-                            <option value="Rusak">🔴 Rusak / Perbaikan</option>
+                            <option value="Tersedia">Tersedia</option>
+                            <option value="Disewa">Sedang Disewa</option>
+                            <option value="Laundry">Laundry</option>
+                            <option value="Rusak">Rusak / Perbaikan</option>
                         </select>
 
                         {{-- Bagian 3: Info harga (read-only untuk referensi) --}}
-                        <div class="inv-sec-title" style="margin-top:8px">💰 Harga Sewa</div>
+                        <div class="inv-sec-title" style="margin-top:8px"><i class="bi bi-cash"></i> Harga Sewa</div>
                         <div style="padding:10px 12px;background:#f8f7f4;border-radius:8px;
                             border:1px solid var(--gray-200);margin-bottom:4px">
                             <span style="font-family:var(--ff-mono);font-size:15px;
@@ -606,12 +669,12 @@
                     <div class="inv-panel-foot">
                         <button class="btn-save-stok" id="btnSaveStok"
                                 onclick="saveStok()">
-                            💾 Simpan Perubahan Stok
+                            <i class=\"bi bi-floppy2-fill\"></i> Simpan Perubahan Stok
                         </button>
                         @if($isOwner)
                         <button class="btn-delete-barang" id="btnDeleteBarang"
                                 onclick="deleteBarang()">
-                            🗑️ Hapus Barang dari Inventaris
+                            <i class="bi bi-trash"></i> Hapus Barang dari Inventaris
                         </button>
                         @endif
                     </div>
@@ -633,7 +696,7 @@
             <div style="max-width:800px">
                 <div style="margin-bottom:20px">
                     <div style="font-size:16px;font-weight:700;color:var(--black)">
-                        ➕ Daftarkan Barang Baru
+                        <i class="bi bi-plus-circle-fill"></i> Daftarkan Barang Baru
                     </div>
                     <div style="font-size:12px;color:var(--gray-400);margin-top:4px">
                         Isi semua detail barang, lalu tentukan stok awal per ukuran.
@@ -712,7 +775,7 @@
                     </button>
                     <button type="submit" class="btn-gold"
                             style="padding:10px 28px;font-size:13.5px">
-                        💾 Simpan Barang Baru
+                        <i class="bi bi-floppy2-fill"></i> Simpan Barang Baru
                     </button>
                 </div>
 
@@ -841,7 +904,7 @@ function renderGrid() {
                      onclick="selectBarang(${b.id})">
             <div class="inv-card-img">
                 ${hasFoto ? `<img src="/${b.foto}" onerror="this.style.display='none'">` : ''}
-                <span style="font-size:32px${hasFoto ? ';display:none' : ''}">👘</span>
+                <span style="font-size:32px${hasFoto ? ';display:none' : ''}"><i class='bi bi-bag-heart' style='color:var(--gold-dk);opacity:.5'></i></span>
                 <div class="inv-status-badge ${b.status.toLowerCase()}">${b.status}</div>
             </div>
             <div class="inv-card-body">
@@ -1007,7 +1070,7 @@ function saveStok() {
     .catch(() => showToast('❌ Terjadi kesalahan jaringan'))
     .finally(() => {
         btn.disabled    = false;
-        btn.textContent = '💾 Simpan Perubahan Stok';
+        btn.innerHTML = '<i class="bi bi-floppy2-fill"></i> Simpan Perubahan Stok';
     });
 }
 

@@ -110,8 +110,7 @@
     </div>
 
     {{-- ═══ TABEL ═══ --}}
-    <div class="inv-table-card">
-        <div class="table-responsive">
+    <div class="inv-table-card"><div class="table-responsive">
             <table class="inv-tbl">
                 <thead>
                     <tr>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>NM Gallery SIM — @yield('title', 'Laporan')</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 
@@ -724,9 +725,118 @@ table.report-tbl { width: 100%; border-collapse: collapse; }
 .mb-4        { margin-bottom: 16px; }
 .mb-5        { margin-bottom: 20px; }
 
+/* ══════════════════════════════════════════════
+   RESPONSIVE — Mobile Overlay Sidebar & Grids
+══════════════════════════════════════════════ */
+
+/* Semi-transparent backdrop shown when mobile sidebar is open */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.52);
+  z-index: 25;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease;
+}
+body.mob-sidebar-open .sidebar-backdrop {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Responsive table wrapper — add this class around every <table> */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0;
+}
+
+/* ── Mobile (≤ 768px) ─────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Sidebar becomes a fixed full-height overlay that slides in from left */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar) !important;
+    min-width: var(--sidebar) !important;
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1) !important;
+    z-index: 40;
+  }
+  /* Override the desktop collapsed state — on mobile width doesn't change */
+  body.sidebar-collapsed .sidebar {
+    width: var(--sidebar) !important;
+    min-width: var(--sidebar) !important;
+    transform: translateX(-100%);
+  }
+  body.mob-sidebar-open .sidebar {
+    transform: translateX(0) !important;
+  }
+
+  /* Topbar */
+  .topbar { padding: 0 12px; gap: 8px; }
+  .tb-search { display: none; }
+  .tb-breadcrumb { font-size: 11.5px; gap: 4px; }
+
+  /* Content area padding */
+  .content { padding: 14px; }
+
+  /* Stat cards: single column on mobile */
+  .stat-row { grid-template-columns: 1fr; }
+
+  /* Form grids: single column */
+  .fgrid { grid-template-columns: 1fr; }
+  .f-full { grid-column: 1; }
+
+  /* Report grid: single column */
+  .reports-grid { grid-template-columns: 1fr; }
+
+  /* Transaction form + nota: stack vertically */
+  .trx-layout { grid-template-columns: 1fr; }
+  .nota-panel { position: static; }
+
+  /* Export action row: stack on mobile */
+  .export-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .export-btns { width: 100%; }
+  .export-btns .btn-outline,
+  .export-btns .btn-gold { flex: 1; justify-content: center; }
+
+  /* Page title */
+  .pg-title { font-size: 17px; }
+  .pg-head  { margin-bottom: 16px; }
+
+  /* Inventory toolbar */
+  .inv-toolbar { flex-direction: column; align-items: flex-start; }
+  .filter-chips { flex-wrap: wrap; }
+
+  /* Tables need minimum width so they scroll horizontally instead of wrapping */
+  .inv-tbl   { min-width: 560px; }
+  .report-tbl { min-width: 640px; }
+}
+
+/* ── Tablet (769px – 1024px) ──────────────────────── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .stat-row    { grid-template-columns: repeat(2, 1fr); }
+  .reports-grid { grid-template-columns: 1fr; }
+  .trx-layout  { grid-template-columns: 1fr; }
+  .nota-panel  { position: static; }
+  .content     { padding: 18px; }
+}
+
+/* ── Desktop sidebar restore (>768px): no overlay behaviour ── */
+@media (min-width: 769px) {
+  .sidebar-backdrop { display: none !important; }
+  body.mob-sidebar-open .sidebar { transform: none !important; }
+}
+
+
 </style>
 </head>
 <body>
+
+  <!-- Backdrop for mobile sidebar overlay -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
 
   {{-- Progress bar untuk SPA navigation --}}
   <div id="spa-bar" style="position:fixed;top:0;left:0;height:2.5px;background:var(--gold);
@@ -869,12 +979,6 @@ table.report-tbl { width: 100%; border-collapse: collapse; }
             <span class="cur">@yield('breadcrumb', 'Laporan')</span>
         </nav>
 
-        {{-- Search bar --}}
-        <div class="tb-search">
-            <span style="font-size:13px;color:var(--gray-400)">🔍</span>
-            <input placeholder="Cari baju, pelanggan, transaksi…">
-        </div>
-
         {{-- Grup tombol kanan --}}
         <div class="tb-right">
 
@@ -910,7 +1014,7 @@ table.report-tbl { width: 100%; border-collapse: collapse; }
 {{-- Access Denied Modal --}}
 <div class="modal-overlay" id="accessModal">
     <div class="modal-popup">
-        <div class="modal-popup-icon">🔒</div>
+        <div class="modal-popup-icon"><i class="bi bi-shield-lock-fill" style="font-size:26px;color:#c0392b"></i></div>
         <div class="modal-popup-title">Akses Ditolak</div>
         <div class="modal-popup-msg" id="accessModalMsg">Anda tidak memiliki akses ke halaman ini.</div>
         <button class="modal-popup-close" onclick="closeAccessModal()">OK, Mengerti</button>
@@ -934,11 +1038,27 @@ table.report-tbl { width: 100%; border-collapse: collapse; }
     }
 })();
 
-function toggleSidebar() {
-    const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
-    // Simpan preferensi agar bertahan lintas sesi
-    localStorage.setItem('sidebar-collapsed', isCollapsed ? '1' : '0');
+function isMobile() { return window.innerWidth <= 768; }
+
+function closeMobileSidebar() {
+    document.body.classList.remove('mob-sidebar-open');
 }
+
+function toggleSidebar() {
+    if (isMobile()) {
+        // On mobile: slide-in/out overlay — don't touch localStorage
+        document.body.classList.toggle('mob-sidebar-open');
+    } else {
+        // On desktop: classic collapse (width → 0) — persist preference
+        const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebar-collapsed', isCollapsed ? '1' : '0');
+    }
+}
+
+// Close mobile sidebar when window resizes to desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) document.body.classList.remove('mob-sidebar-open');
+});
 
 /* ════════════════════════════════════════════════════
    2. PROFILE DROPDOWN

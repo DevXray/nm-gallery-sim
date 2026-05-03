@@ -10,11 +10,11 @@
     background:var(--black);color:var(--gold-lt);border:1px solid var(--gold-rim);
     border-radius:10px;padding:12px 20px;font-size:13px;font-weight:600;
     box-shadow:0 8px 24px rgba(0,0,0,.25);transition:opacity .3s ease">
-    ✅ Tarif berhasil disimpan
+    <i class="bi bi-check-circle-fill"></i> Tarif berhasil disimpan
 </div>
 
 <div class="pg-head">
-    <div class="pg-title">⚙️ Pengaturan</div>
+    <div class="pg-title"><i class="bi bi-gear-wide-connected"></i> Pengaturan</div>
     <div class="pg-sub">Kelola tarif sewa dan ketentuan denda keterlambatan</div>
 </div>
 
@@ -23,7 +23,7 @@
     kiri  = form tarif (area utama)
     kanan = info sesi + tombol logout
 --}}
-<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+<div class="pengaturan-grid" style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
 
     {{-- ══════════════════════════════
          KIRI — Tarif & Ketentuan
@@ -54,7 +54,7 @@
         <div class="card gold-top" style="margin-bottom:0">
             <div class="card-head">
                 <div>
-                    <div class="card-title">💰 Tarif Sewa</div>
+                    <div class="card-title"><i class="bi bi-cash"></i> Tarif Sewa</div>
                     <div class="card-sub">Harga dasar yang ditawarkan kepada pelanggan</div>
                 </div>
             </div>
@@ -138,7 +138,7 @@
         <div class="card" style="border-top:2px solid #e03434;margin-top:16px">
             <div class="card-head" style="background:rgba(220,52,52,.03)">
                 <div>
-                    <div class="card-title" style="color:#c0392b">⚠️ Denda Keterlambatan</div>
+                    <div class="card-title" style="color:#c0392b"><i class="bi bi-exclamation-triangle-fill"></i> Denda Keterlambatan</div>
                     <div class="card-sub">Dikenakan per hari setelah tanggal jatuh tempo terlewati</div>
                 </div>
                 <div style="background:rgba(220,52,52,.08);color:#c0392b;border:1px solid rgba(220,52,52,.2);
@@ -209,11 +209,11 @@
         <div style="display:flex;align-items:center;justify-content:flex-end;
             gap:12px;margin-top:6px">
             <button type="button" onclick="resetTarif()" class="btn-white">
-                ↺ Reset ke Terakhir Disimpan
+                <i class="bi bi-arrow-counterclockwise"></i> Reset ke Terakhir Disimpan
             </button>
             <button type="submit" class="btn-gold" id="btnSimpan"
                 style="padding:10px 28px;font-size:13.5px">
-                💾 Simpan Perubahan Tarif
+                <i class="bi bi-floppy2-fill"></i> Simpan Perubahan Tarif
             </button>
         </div>
 
@@ -229,7 +229,7 @@
         <div class="card gold-top">
             <div class="card-head">
                 <div>
-                    <div class="card-title">👤 Sesi Aktif</div>
+                    <div class="card-title"><i class="bi bi-person-badge"></i> Sesi Aktif</div>
                     <div class="card-sub">Informasi akun yang sedang login</div>
                 </div>
             </div>
@@ -277,7 +277,7 @@
             border-radius:var(--r3);overflow:hidden;box-shadow:var(--sh-xs)">
             <div style="padding:14px 18px 12px;border-bottom:1px solid rgba(220,52,52,.12);
                 background:rgba(220,52,52,.03)">
-                <div style="font-size:13px;font-weight:700;color:#c0392b">🚪 Keluar dari Sistem</div>
+                <div style="font-size:13px;font-weight:700;color:#c0392b"><i class="bi bi-box-arrow-right"></i> Keluar dari Sistem</div>
                 <div style="font-size:11px;color:var(--gray-400);margin-top:3px">
                     Sesi Anda akan diakhiri dan diarahkan ke halaman login
                 </div>
@@ -297,7 +297,7 @@
                         box-shadow:0 2px 8px rgba(183,28,28,.25)"
                         onmouseover="this.style.background='#c62828'"
                         onmouseout="this.style.background='#b71c1c'">
-                        🚪 Logout Sekarang
+                        <i class="bi bi-box-arrow-right"></i> Logout Sekarang
                     </button>
                 </form>
             </div>
@@ -306,7 +306,7 @@
         {{-- Kartu info singkat versi tarif aktif --}}
         <div class="card" style="border-top:2px solid var(--gold)">
             <div class="card-head">
-                <div class="card-title">📋 Ringkasan Tarif Aktif</div>
+                <div class="card-title"><i class="bi bi-list-check"></i> Ringkasan Tarif Aktif</div>
             </div>
             <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">
                 @foreach([
@@ -359,6 +359,24 @@
     border-color: rgba(220,52,52,.5);
     box-shadow: 0 0 0 3px rgba(220,52,52,.08);
 }
+/* Pengaturan responsive */
+@media (max-width: 900px) {
+    .pengaturan-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+@media (max-width: 768px) {
+    .tarif-input { width: 110px; }
+    #wrap_tarif_dasar,
+    #wrap_tarif_fullset,
+    #wrap_jaminan,
+    #wrap_denda {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+}
+
 /* Highlight wrapper saat input di dalamnya fokus */
 #wrap_tarif_dasar:focus-within,
 #wrap_tarif_fullset:focus-within,
@@ -431,7 +449,7 @@ document.getElementById('tarifForm').addEventListener('submit', function(e) {
 
     const btn = document.getElementById('btnSimpan');
     btn.disabled  = true;
-    btn.textContent = '⏳ Menyimpan…';
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Menyimpan…';
 
     const formData = new FormData(this);
     formData.append('_token', '{{ csrf_token() }}');
@@ -462,7 +480,7 @@ document.getElementById('tarifForm').addEventListener('submit', function(e) {
     .catch(() => alert('Terjadi kesalahan jaringan.'))
     .finally(() => {
         btn.disabled    = false;
-        btn.textContent = '💾 Simpan Perubahan Tarif';
+        btn.innerHTML = '<i class="bi bi-floppy2-fill"></i> Simpan Perubahan Tarif';
     });
 });
 
